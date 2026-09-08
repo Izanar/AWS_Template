@@ -1,0 +1,44 @@
+---
+- name: Check kubectl is available
+  ansible.builtin.command: "{{ item.command }}"
+  loop:
+    - command: kubectl version --client
+  changed_when: false
+
+- name: Apply Kubernetes manifests
+  ansible.builtin.command: kubectl apply -f {{ item }}
+  loop: "{{ kubernetes_manifests }}"
+  changed_when: true
+
+- name: Pin the application image tag
+  ansible.builtin.command: >
+    kubectl -n {{ namespace }} set image deployment/{{ deployment_name }}
+    {{ deployment_name }}={{ image_repository }}:{{ image_tag }}
+  changed_when: true
+
+- name: Wait for the application pod
+  ansible.builtin.command: >
+    kubectl wait --namespace {{ namespace }} --for=condition=ready pod
+    -l app={{ app_label }} --timeout=180s
+  changed_when: false
+
+- name: Find application pods
+  ansible.builtin.command: >
+    kubectl get pods -n {{ namespace }} -l app={{ app_label }}
+    -o jsonpath={range .items[*]}{.metadata.name}{"\n"}{end}
+  register: application_pods
+  changed_when: false
+
+- name: Copy AI_Nginx files into every application pod
+  ansible.builtin.shell: |
+    while IFS= read -r pod; do
+      kubectl cp "{{ app_cache_dir }}/html/." "{{ namespace }}/${pod}:/usr/share/nginx/html/"
+    done <<< "{{ application_pods.stdout }}"
+  args:
+    executable: /bin/bash
+  changed_when: true
+
+- name: Remove local application checkout
+  ansible.builtin.file:
+    path: "{{ app_cache_dir }}"
+    state: absent
