@@ -5,15 +5,15 @@ ImageTestEnv is split into four layers:
 ```
 └── root.hcl                  Root config: shared locals + generated provider.tf
     ├── envs/                 One Terragrunt unit per environment
-    │   ├── ec2-dev/
-    │   ├── eks-fargate-dev/
-    │   ├── eks-ec2-s3-dev/
-    │   └── local-wsl-dev/
+    │   ├── ec2/
+    │   ├── eks-fargate/
+    │   ├── eks-ec2-s3/
+    │   └── local-wsl/
     ├── src/                  Self-contained Terraform roots (sources)
-    │   ├── ec2-dev/          EC2 + budget
-    │   ├── eks-fargate-dev/  VPC + EKS + budget
-    │   ├── eks-ec2-s3-dev/   VPC + EKS + S3 + CloudFront + budget
-    │   └── local-wsl-dev/    k3s install + network instructions
+    │   ├── ec2/          EC2 + budget
+    │   ├── eks-fargate/  VPC + EKS + budget
+    │   ├── eks-ec2-s3/   VPC + EKS + S3 + CloudFront + budget
+    │   └── local-wsl/    k3s install + network instructions
     ├── ansible/              Playbooks and roles
     ├── kubernetes/base/      Manifests for the demo workload
     ├── scripts/              Helper scripts
@@ -30,7 +30,7 @@ ImageTestEnv is split into four layers:
 3. The unit points `terraform.source` at the matching self-contained root under
    `src/` and passes its `inputs` as Terraform variables.
 4. `terraform` (through Terragrunt) creates the infrastructure.
-5. For `ec2-dev`, `scripts/deploy.sh` runs the `nginx` Ansible role against the
+5. For `ec2`, `scripts/deploy.sh` runs the `nginx` Ansible role against the
    new instance and smoke-tests the site.
 6. For Kubernetes scenarios, the `eks` Ansible role applies the manifests from
    `kubernetes/base/`.

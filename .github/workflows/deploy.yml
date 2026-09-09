@@ -7,12 +7,12 @@ on:
         description: 'Environment scenario'
         required: true
         type: choice
-        default: 'ec2-dev'
+        default: 'ec2'
         options:
-          - ec2-dev
-          - eks-fargate-dev
-          - eks-ec2-s3-dev
-          - local-wsl-dev
+          - ec2
+          - eks-fargate
+          - eks-ec2-s3
+          - local-wsl
       action:
         description: 'Terragrunt action to run'
         required: true
@@ -41,7 +41,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure AWS credentials with OIDC
-        if: inputs.scenario != 'local-wsl-dev'
+        if: inputs.scenario != 'local-wsl'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}

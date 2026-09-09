@@ -3,7 +3,7 @@ include "root" {
 }
 
 terraform {
-  source = "../../src/local-wsl-dev"
+  source = "../../src/local-wsl"
 }
 
 inputs = {

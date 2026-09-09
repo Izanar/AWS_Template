@@ -6,10 +6,10 @@ and **Kubernetes**.
 
 | Scenario | Infrastructure | Where |
 |---|---|---|
-| `ec2-dev` | AWS Spot EC2 + nginx (Ansible) | Cloud (AWS) |
-| `eks-fargate-dev` | AWS EKS cluster (Fargate profiles) | Cloud (AWS) |
-| `eks-ec2-s3-dev` | AWS EKS + S3 + CloudFront (OAC) | Cloud (AWS) |
-| `local-wsl-dev` | k3s on WSL2 | Local |
+| `ec2` | AWS Spot EC2 + nginx (Ansible) | Cloud (AWS) |
+| `eks-fargate` | AWS EKS cluster (Fargate profiles) | Cloud (AWS) |
+| `eks-ec2-s3` | AWS EKS + S3 + CloudFront (OAC) | Cloud (AWS) |
+| `local-wsl` | k3s on WSL2 | Local |
 
 ## Repository layout
 
@@ -32,8 +32,8 @@ directory.
 
 ```bash
 make validate                       # static checks only
-./scripts/deploy.sh ec2-dev         # full local lifecycle
-./scripts/destroy.sh ec2-dev
+./scripts/deploy.sh ec2         # full local lifecycle
+./scripts/destroy.sh ec2
 ```
 
 See [docs/usage.md](docs/usage.md) for the complete guide, including the

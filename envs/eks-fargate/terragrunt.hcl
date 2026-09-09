@@ -3,7 +3,7 @@ include "root" {
 }
 
 terraform {
-  source = "../../src/eks-fargate-dev"
+  source = "../../src/eks-fargate"
 }
 
 inputs = {

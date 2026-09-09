@@ -5,12 +5,12 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-SCENARIO="${1:-ec2-dev}"
+SCENARIO="${1:-ec2}"
 ENV_DIR="envs/${SCENARIO}"
 
 if [[ ! -f "${ENV_DIR}/terragrunt.hcl" ]]; then
   echo "Unknown scenario: ${SCENARIO}" >&2
-  echo "Available: ec2-dev eks-fargate-dev eks-ec2-s3-dev local-wsl-dev" >&2
+  echo "Available: ec2 eks-fargate eks-ec2-s3 local-wsl" >&2
   exit 1
 fi
 

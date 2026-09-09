@@ -9,15 +9,15 @@
 #   make destroy [ENV=..] Run `terragrunt destroy`
 #   make output [ENV=..] Show terraform outputs
 #
-# ENV selects the Terragrunt environment directory under envs/ (default: ec2-dev).
-# Supported values: ec2-dev eks-fargate-dev eks-ec2-s3-dev local-wsl-dev
+# ENV selects the Terragrunt environment directory under envs/ (default: ec2).
+# Supported values: ec2 eks-fargate eks-ec2-s3 local-wsl
 #
 # Requires: terraform >= 1.9, terragrunt >= 0.68, and either aws CLI (cloud
-# scenarios) or nothing (local-wsl-dev). Use `make install-tools` to get them
+# scenarios) or nothing (local-wsl). Use `make install-tools` to get them
 # into ~/.local/bin and ~/venvs/tools (Python 3.11+).
 
 SHELL := /usr/bin/env bash
-ENV   ?= ec2-dev
+ENV   ?= ec2
 ENV_DIR := envs/$(ENV)
 SRC_DIRS := $(wildcard src/*)
 TERRAFORM ?= terraform

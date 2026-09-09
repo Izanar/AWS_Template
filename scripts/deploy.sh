@@ -3,20 +3,20 @@
 # Usage: ./scripts/deploy.sh [scenario]
 #
 # Scenarios:
-#   ec2-dev          AWS EC2 + nginx (needs AWS credentials and an SSH key)
-#   eks-fargate-dev  AWS EKS on Fargate (needs AWS credentials)
-#   eks-ec2-s3-dev   AWS EKS + S3 + CloudFront (needs AWS credentials)
-#   local-wsl-dev    Local k3s on WSL2 (no cloud credentials required)
+#   ec2          AWS EC2 + nginx (needs AWS credentials and an SSH key)
+#   eks-fargate  AWS EKS on Fargate (needs AWS credentials)
+#   eks-ec2-s3   AWS EKS + S3 + CloudFront (needs AWS credentials)
+#   local-wsl    Local k3s on WSL2 (no cloud credentials required)
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-SCENARIO="${1:-ec2-dev}"
+SCENARIO="${1:-ec2}"
 ENV_DIR="envs/${SCENARIO}"
 
 if [[ ! -f "${ENV_DIR}/terragrunt.hcl" ]]; then
   echo "Unknown scenario: ${SCENARIO}" >&2
-  echo "Available: ec2-dev eks-fargate-dev eks-ec2-s3-dev local-wsl-dev" >&2
+  echo "Available: ec2 eks-fargate eks-ec2-s3 local-wsl" >&2
   exit 1
 fi
 
@@ -39,7 +39,7 @@ terragrunt --working-dir "${ENV_DIR}" plan -input=false
 terragrunt --working-dir "${ENV_DIR}" apply -auto-approve
 
 case "$SCENARIO" in
-  ec2-dev)
+  ec2)
     command -v aws >/dev/null || { echo "aws CLI is required for the EC2 scenario" >&2; exit 1; }
     command -v ansible-playbook >/dev/null || { echo "ansible-playbook is required for the EC2 scenario" >&2; exit 1; }
 

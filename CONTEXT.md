@@ -10,10 +10,10 @@ roots under `src/`, wired to the Terragrunt units under `envs/`.
 ## What Has Been Done
 
 ### Self-contained Terraform roots (`src/`)
-- `src/ec2-dev` (main.tf, variables.tf, outputs.tf) - EC2 + budget
-- `src/eks-fargate-dev` (main.tf, variables.tf, outputs.tf) - VPC + EKS + budget
-- `src/eks-ec2-s3-dev` (main.tf, variables.tf, outputs.tf) - VPC + EKS + S3 + CloudFront + budget
-- `src/local-wsl-dev` (main.tf, variables.tf, outputs.tf) - k3s via local-exec
+- `src/ec2` (main.tf, variables.tf, outputs.tf) - EC2 + budget
+- `src/eks-fargate` (main.tf, variables.tf, outputs.tf) - VPC + EKS + budget
+- `src/eks-ec2-s3` (main.tf, variables.tf, outputs.tf) - VPC + EKS + S3 + CloudFront + budget
+- `src/local-wsl` (main.tf, variables.tf, outputs.tf) - k3s via local-exec
 
 Each root is cache-safe: no relative sibling paths, only registry modules from
 `terraform-aws-modules`.
@@ -22,10 +22,10 @@ Each root is cache-safe: no relative sibling paths, only registry modules from
 - Root `root.hcl` with provider generation (aws ~> 6.0, Terraform >= 1.9)
   and common locals
 - Environment configurations with `terraform.source` pointing to `src/*`:
-  - `envs/ec2-dev/terragrunt.hcl`
-  - `envs/eks-fargate-dev/terragrunt.hcl`
-  - `envs/eks-ec2-s3-dev/terragrunt.hcl`
-  - `envs/local-wsl-dev/terragrunt.hcl`
+  - `envs/ec2/terragrunt.hcl`
+  - `envs/eks-fargate/terragrunt.hcl`
+  - `envs/eks-ec2-s3/terragrunt.hcl`
+  - `envs/local-wsl/terragrunt.hcl`
 
 ### Ansible Roles and Playbooks
 - Roles: `nginx`, `deploy-site`, `eks`
@@ -53,14 +53,14 @@ Each root is cache-safe: no relative sibling paths, only registry modules from
 - Terraform: `terraform init` + `validate` pass for all `src/*` roots (TF 1.16.2,
   aws provider 6.x)
 - Terragrunt: `render` + `init` pass for all four envs; `plan` pass for
-  `local-wsl-dev` (no cloud credentials needed)
+  `local-wsl` (no cloud credentials needed)
 - Ansible: playbook syntax checks pass
 - Kubernetes: manifests parse cleanly under yamllint
 
 ## What Remains to Be Done
 
-- [ ] Run `terragrunt apply` against a real AWS account for `ec2-dev`,
-      `eks-fargate-dev` and `eks-ec2-s3-dev` (requires AWS credentials/OIDC role)
+- [ ] Run `terragrunt apply` against a real AWS account for `ec2`,
+      `eks-fargate` and `eks-ec2-s3` (requires AWS credentials/OIDC role)
 - [ ] Deploy the demo workload to a real cluster (EKS or local k3s) and observe
       the readiness probes
 - [ ] If the previous `modules/` layout is still referenced anywhere (docs,
@@ -72,7 +72,7 @@ Each root is cache-safe: no relative sibling paths, only registry modules from
 
 1. Export AWS credentials or configure `AWS_ROLE_ARN` OIDC in GitHub.
 2. Run `make validate` to confirm the tree is healthy.
-3. Run `./scripts/deploy.sh ec2-dev` (or the manual `deploy.yml` action) and
+3. Run `./scripts/deploy.sh ec2` (or the manual `deploy.yml` action) and
    verify the nginx page and the budget alert.
 4. Repeat for the EKS scenarios, then `./scripts/destroy.sh <scenario>`.
-5. Test `local-wsl-dev` on an actual WSL2 host (k3s + port forwarding).
+5. Test `local-wsl` on an actual WSL2 host (k3s + port forwarding).

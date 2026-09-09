@@ -3,7 +3,7 @@ include "root" {
 }
 
 terraform {
-  source = "../../src/ec2-dev"
+  source = "../../src/ec2"
 }
 
 inputs = {

@@ -7,18 +7,18 @@
 make install-tools
 
 # 2. Pick a scenario and deploy it (interactive; asks for region/email)
-./scripts/deploy.sh ec2-dev
+./scripts/deploy.sh ec2
 
 # 3. When you are done, destroy the same resources
-./scripts/destroy.sh ec2-dev
+./scripts/destroy.sh ec2
 ```
 
 ## Scenario run guides
 
 Each scenario is a Terragrunt environment under `envs/`. Deploy creates real,
-billable resources (except `local-wsl-dev`, which is local only).
+billable resources (except `local-wsl`, which is local only).
 
-### 1. `ec2-dev` — AWS EC2 + nginx (Ansible)
+### 1. `ec2` — AWS EC2 + nginx (Ansible)
 
 **Requirements:** AWS credentials, `aws` CLI, `ansible-playbook`, an SSH key
 pair (`~/.ssh/id_rsa.pub` by default).
@@ -28,7 +28,7 @@ pair (`~/.ssh/id_rsa.pub` by default).
 ls -l ~/.ssh/id_rsa ~/.ssh/id_rsa.pub
 aws sts get-caller-identity          # verify AWS credentials
 
-./scripts/deploy.sh ec2-dev          # creates EC2, prints the nginx URL
+./scripts/deploy.sh ec2          # creates EC2, prints the nginx URL
 #    -> asks region, budget email, SSH key path and your public IP (optional)
 #    -> the runner's IP is added to the SSH security group automatically
 
@@ -36,55 +36,55 @@ aws sts get-caller-identity          # verify AWS credentials
 ansible-playbook -i /tmp/image-test-env-inventory.ini ansible/nginx.yml
 
 # Inspect the deployed demo
-curl "$(./scripts/deploy.sh ec2-dev --help >/dev/null; terragrunt --working-dir envs/ec2-dev output -raw nginx_url)"
+curl "$(./scripts/deploy.sh ec2 --help >/dev/null; terragrunt --working-dir envs/ec2 output -raw nginx_url)"
 
-./scripts/destroy.sh ec2-dev         # destroys the instance and all wiring
+./scripts/destroy.sh ec2         # destroys the instance and all wiring
 ```
 
 **Outputs:** `public_ip`, `nginx_url`, `instance_id`.
 
-### 2. `eks-fargate-dev` — AWS EKS on Fargate
+### 2. `eks-fargate` — AWS EKS on Fargate
 
 **Requirements:** AWS credentials, `aws` CLI, `kubectl`.
 
 ```bash
 aws sts get-caller-identity
 
-./scripts/deploy.sh eks-fargate-dev  # creates the EKS control plane + profiles
+./scripts/deploy.sh eks-fargate  # creates the EKS control plane + profiles
 #    -> takes 15-25 minutes; the kubeconfig snippet is printed at the end
 
 # Connect kubectl to the new cluster (replace the printed values)
-aws eks update-kubeconfig --name "$(terragrunt --working-dir envs/eks-fargate-dev output -raw cluster_name)" --region eu-central-1
+aws eks update-kubeconfig --name "$(terragrunt --working-dir envs/eks-fargate output -raw cluster_name)" --region eu-central-1
 kubectl get nodes
 kubectl apply -k k8s/                 # deploy the demo workload
 
-./scripts/destroy.sh eks-fargate-dev # destroys the cluster (also 15-25 min)
+./scripts/destroy.sh eks-fargate # destroys the cluster (also 15-25 min)
 ```
 
 **Outputs:** `cluster_name`, `cluster_endpoint`.
 
-### 3. `eks-ec2-s3-dev` — AWS EKS + S3 + CloudFront (OAC)
+### 3. `eks-ec2-s3` — AWS EKS + S3 + CloudFront (OAC)
 
 **Requirements:** AWS credentials, `aws` CLI, `kubectl`.
 
 ```bash
 aws sts get-caller-identity
 
-./scripts/deploy.sh eks-ec2-s3-dev   # EKS + S3 bucket + CloudFront with OAC
+./scripts/deploy.sh eks-ec2-s3   # EKS + S3 bucket + CloudFront with OAC
 #    -> same 15-25 minutes; S3 and CloudFront serve the static demo
 
-aws eks update-kubeconfig --name "$(terragrunt --working-dir envs/eks-ec2-s3-dev output -raw cluster_name)" --region eu-central-1
+aws eks update-kubeconfig --name "$(terragrunt --working-dir envs/eks-ec2-s3 output -raw cluster_name)" --region eu-central-1
 kubectl get nodes
 
 # Check the CDN-served demo
-curl "$(terragrunt --working-dir envs/eks-ec2-s3-dev output -raw demo_url)"
+curl "$(terragrunt --working-dir envs/eks-ec2-s3 output -raw demo_url)"
 
-./scripts/destroy.sh eks-ec2-s3-dev  # destroys the cluster, bucket and CDN
+./scripts/destroy.sh eks-ec2-s3  # destroys the cluster, bucket and CDN
 ```
 
 **Outputs:** `cluster_name`, `bucket_name`, `demo_url`.
 
-### 4. `local-wsl-dev` — k3s on WSL2 (no cloud)
+### 4. `local-wsl` — k3s on WSL2 (no cloud)
 
 **Requirements:** WSL2 with `kubectl`. The install script sets up k3s for you.
 
@@ -93,11 +93,11 @@ curl "$(terragrunt --working-dir envs/eks-ec2-s3-dev output -raw demo_url)"
 ./scripts/install-wsl-kubernetes.sh
 ./scripts/configure-wsl-network.sh   # fixes DNS/firewall inside WSL2
 
-./scripts/deploy.sh local-wsl-dev    # brings up the local k3s demo
+./scripts/deploy.sh local-wsl    # brings up the local k3s demo
 kubectl get nodes                    # single k3s node
 kubectl get pods -A
 
-./scripts/destroy.sh local-wsl-dev   # removes the local demo resources
+./scripts/destroy.sh local-wsl   # removes the local demo resources
 ```
 
 Nothing billable here; it runs entirely on your machine.
@@ -117,19 +117,19 @@ export BUDGET_EMAIL=you@example.com   # optional
 ## Individual Terragrunt commands
 
 ```bash
-make init   ENV=ec2-dev        # terragrunt init
-make plan   ENV=ec2-dev        # terragrunt plan
-make apply  ENV=ec2-dev        # terragrunt apply (creates resources)
-make output ENV=ec2-dev        # print terraform outputs
-make destroy ENV=ec2-dev       # terragrunt destroy
+make init   ENV=ec2        # terragrunt init
+make plan   ENV=ec2        # terragrunt plan
+make apply  ENV=ec2        # terragrunt apply (creates resources)
+make output ENV=ec2        # print terraform outputs
+make destroy ENV=ec2       # terragrunt destroy
 ```
 
-Supported `ENV` values: `ec2-dev`, `eks-fargate-dev`, `eks-ec2-s3-dev`,
-`local-wsl-dev`.
+Supported `ENV` values: `ec2`, `eks-fargate`, `eks-ec2-s3`,
+`local-wsl`.
 
 `make validate` checks Terraform, Ansible, Kubernetes YAML and Shell scripts.
 
-> The `ec2-dev` scenario needs an SSH key pair. `public_key_path` defaults to
+> The `ec2` scenario needs an SSH key pair. `public_key_path` defaults to
 > `~/.ssh/id_rsa.pub`; the corresponding private key is used by Ansible.
 
 ## GitHub Actions
@@ -144,5 +144,5 @@ The repository ships two workflows:
 ### Required secrets (cloud scenarios)
 
 - `AWS_ROLE_ARN` - role that trusts GitHub OIDC for this repository.
-- `AWS_SSH_PRIVATE_KEY` / `AWS_SSH_PUBLIC_KEY` - SSH keys used by the `ec2-dev`
+- `AWS_SSH_PRIVATE_KEY` / `AWS_SSH_PUBLIC_KEY` - SSH keys used by the `ec2`
   Ansible provisioning.
