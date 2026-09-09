@@ -1,4 +1,4 @@
-# ImageTestEnv
+# AWS_Template
 
 A hands-on infrastructure template that deploys the [AI_Nginx](https://github.com/Izanar/AI_Nginx)
 demo application (custom nginx site with the Kyiv Skyline static + audio page)

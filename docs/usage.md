@@ -36,7 +36,7 @@ aws sts get-caller-identity          # verify AWS credentials
 #    -> the runner's IP is added to the SSH security group automatically
 
 # Re-run the nginx provisioning at any time against the same instance
-ansible-playbook -i /tmp/image-test-env-inventory.ini ansible/nginx.yml
+ansible-playbook -i /tmp/aws-template-inventory.ini ansible/nginx.yml
 
 # Inspect the deployed demo
 curl "$(./scripts/deploy.sh ec2 --help >/dev/null; terragrunt --working-dir envs/ec2 output -raw nginx_url)"

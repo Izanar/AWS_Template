@@ -1,6 +1,6 @@
 # Architecture
 
-ImageTestEnv is split into four layers:
+AWS_Template is split into four layers:
 
 ```
 └── root.hcl                  Root config: shared locals + generated provider.tf

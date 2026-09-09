@@ -10,7 +10,7 @@
       - "{{ playbook_dir }}/../kubernetes/base/service.yaml"
     app_repo_url: "https://github.com/Izanar/AI_Nginx.git"
     app_cache_dir: /tmp/ai-nginx
-    image_repository: "ghcr.io/izanar/image-test-env-kubernetes"
+    image_repository: "ghcr.io/izanar/aws-template-kubernetes"
     image_tag: "{{ lookup('env', 'APP_IMAGE_TAG') | default('latest', true) }}"
     k8s_namespace: "ai-nginx-demo"
     deployment_name: "ai-nginx-app"

@@ -56,13 +56,13 @@ case "$SCENARIO" in
     ssh_cidrs+="]"
 
     public_ip="$(terragrunt --working-dir "${ENV_DIR}" output -raw public_ip)"
-    cat > /tmp/image-test-env-inventory.ini <<INV
+    cat > /tmp/aws-template-inventory.ini <<INV
 [webservers]
 ${public_ip} ansible_user=ubuntu ansible_ssh_private_key_file=${public_key_path%.pub}
 [webservers:vars]
 nginx_ssh_cidrs=${ssh_cidrs}
 INV
-    ANSIBLE_ROLES_PATH="ansible/roles" ansible-playbook -i /tmp/image-test-env-inventory.ini ansible/playbooks/ec2.yml
+    ANSIBLE_ROLES_PATH="ansible/roles" ansible-playbook -i /tmp/aws-template-inventory.ini ansible/playbooks/ec2.yml
     nginx_url="http://${public_ip}"
     echo ">>> AI_Nginx demo is live at: $nginx_url"
     curl -fsSL "$nginx_url" >/dev/null && echo ">>> Smoke test OK"

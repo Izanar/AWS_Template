@@ -1,4 +1,4 @@
-# ImageTestEnv Project Context
+# AWS_Template Project Context
 
 ## Summary
 

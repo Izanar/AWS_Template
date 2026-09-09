@@ -1,4 +1,4 @@
-# ImageTestEnv - common task runner
+# AWS_Template - common task runner
 #
 # Usage:
 #   make validate        Validate Terraform sources, Ansible, Kubernetes and Shell

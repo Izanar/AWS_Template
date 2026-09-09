@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: ai-nginx-app
-          image: ghcr.io/izanar/image-test-env-kubernetes:latest
+          image: ghcr.io/izanar/aws-template-kubernetes:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80

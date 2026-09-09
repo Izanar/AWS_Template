@@ -7,7 +7,7 @@ terraform {
 }
 
 inputs = {
-  project_name      = "image-test-env"
+  project_name      = "aws-template"
   environment       = "dev"
   aws_region        = get_env("AWS_DEFAULT_REGION", "eu-central-1")
   instance_type     = "t3.micro"

@@ -35,6 +35,6 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/izanar/image-test-env-kubernetes:latest
-            ghcr.io/izanar/image-test-env-kubernetes:${{ github.sha }}
-            ghcr.io/izanar/image-test-env-s3:latest
+            ghcr.io/izanar/aws-template-kubernetes:latest
+            ghcr.io/izanar/aws-template-kubernetes:${{ github.sha }}
+            ghcr.io/izanar/aws-template-s3:latest

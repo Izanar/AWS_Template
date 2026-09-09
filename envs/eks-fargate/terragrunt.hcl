@@ -7,7 +7,7 @@ terraform {
 }
 
 inputs = {
-  project_name       = "image-test-env"
+  project_name       = "aws-template"
   environment        = "dev"
   aws_region         = get_env("AWS_DEFAULT_REGION", "eu-central-1")
   vpc_cidr           = "10.10.0.0/16"
