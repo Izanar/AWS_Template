@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: weather-app
-  namespace: weather-demo
+  name: ai-nginx-app
+  namespace: ai-nginx-demo
   labels:
-    app: weather-app
+    app: ai-nginx-app
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: weather-app
+      app: ai-nginx-app
   template:
     metadata:
       labels:
-        app: weather-app
+        app: ai-nginx-app
     spec:
       containers:
-        - name: weather-app
+        - name: ai-nginx-app
           image: nginx:1.27.4
           imagePullPolicy: IfNotPresent
           ports:

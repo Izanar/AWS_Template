@@ -12,8 +12,8 @@
     app_cache_dir: /tmp/ai-nginx
     image_repository: "ghcr.io/izanar/image-test-env-kubernetes"
     image_tag: "{{ lookup('env', 'APP_IMAGE_TAG') | default('latest', true) }}"
-    k8s_namespace: "weather-demo"
-    deployment_name: "weather-app"
-    app_label: "weather-app"
+    k8s_namespace: "ai-nginx-demo"
+    deployment_name: "ai-nginx-app"
+    app_label: "ai-nginx-app"
   roles:
     - role: "{{ playbook_dir }}/../roles/eks"

@@ -74,7 +74,7 @@ INV
     aws eks update-kubeconfig --name "$cluster_name" --region "$aws_region"
     echo ">>> Applying the EKS deployment playbook (AI_Nginx image) ..."
     ANSIBLE_ROLES_PATH="ansible/roles" ansible-playbook ansible/playbooks/eks-deploy.yml
-    echo ">>> Deployed. kubectl get pods -n weather-demo to watch it come up."
+    echo ">>> Deployed. kubectl get pods -n ai-nginx-demo to watch it come up."
     ;;
 
   eks-ec2-s3)
@@ -83,7 +83,7 @@ INV
     aws eks update-kubeconfig --name "$cluster_name" --region "$aws_region"
     echo ">>> Applying the EKS deployment playbook (AI_Nginx image) ..."
     ANSIBLE_ROLES_PATH="ansible/roles" ansible-playbook ansible/playbooks/eks-deploy.yml
-    echo ">>> Deployed. kubectl get pods -n weather-demo to watch it come up."
+    echo ">>> Deployed. kubectl get pods -n ai-nginx-demo to watch it come up."
     ;;
 
   local-wsl)
@@ -99,7 +99,7 @@ INV
     kubectl apply -f kubernetes/local/namespace.yaml
     kubectl apply -f kubernetes/local/deployment.yaml
     kubectl apply -f kubernetes/local/service.yaml
-    kubectl rollout status deployment/weather-app -n weather-demo --timeout=180s
+    kubectl rollout status deployment/ai-nginx-app -n ai-nginx-demo --timeout=180s
     node_port="$(terragrunt --working-dir "${ENV_DIR}" output -raw node_port 2>/dev/null || echo 30080)"
     echo ">>> AI_Nginx demo is live at: http://localhost:${node_port}"
     curl -fsSL "http://localhost:${node_port}" >/dev/null && echo ">>> Smoke test OK"
