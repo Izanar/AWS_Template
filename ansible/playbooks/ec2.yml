@@ -7,4 +7,4 @@
     app_repo_url: "https://github.com/Izanar/AI_Nginx.git"
     app_cache_dir: /tmp/ai-nginx
   roles:
-    - nginx
+    - role: "{{ playbook_dir }}/../roles/nginx"

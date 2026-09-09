@@ -1,44 +1,81 @@
 name: Deploy (manual only)
+
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Target environment'
-        required: true
-        default: 'dev'
-        type: choice
-        options:
-          - dev
-          - prod
       scenario:
-        description: 'Deployment scenario'
+        description: 'Environment scenario'
         required: true
-        default: 'ec2-dev'
         type: choice
+        default: 'ec2-dev'
         options:
           - ec2-dev
           - eks-fargate-dev
           - eks-ec2-s3-dev
           - local-wsl-dev
+      action:
+        description: 'Terragrunt action to run'
+        required: true
+        type: choice
+        default: 'apply'
+        options:
+          - apply
+          - destroy
+      region:
+        description: 'AWS region'
+        required: true
+        type: choice
+        default: 'eu-central-1'
+        options:
+          - eu-central-1
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-      - name: Setup AWS credentials
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials with OIDC
+        if: inputs.scenario != 'local-wsl-dev'
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-central-1
-      - name: Initialize Terragrunt
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ inputs.region }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.2"
+
+      - name: Set up Terragrunt
         run: |
-          cd envs/${{ github.event.inputs.scenario }}
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL \
+            https://github.com/gruntwork-io/terragrunt/releases/download/v1.1.4/terragrunt_linux_amd64 \
+            -o "$HOME/.local/bin/terragrunt"
+          chmod +x "$HOME/.local/bin/terragrunt"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Terragrunt apply
+        if: inputs.action == 'apply'
+        env:
+          AWS_DEFAULT_REGION: ${{ inputs.region }}
+          BUDGET_EMAIL: ${{ secrets.BUDGET_EMAIL }}
+        run: |
+          cd envs/${{ inputs.scenario }}
           terragrunt init
-      - name: Apply infrastructure
-        run: |
-          cd envs/${{ github.event.inputs.scenario }}
           terragrunt apply -auto-approve
+
+      - name: Terragrunt destroy
+        if: inputs.action == 'destroy'
+        env:
+          AWS_DEFAULT_REGION: ${{ inputs.region }}
+        run: |
+          cd envs/${{ inputs.scenario }}
+          terragrunt init
+          terragrunt destroy -auto-approve

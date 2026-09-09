@@ -15,8 +15,13 @@ Thumbs.db
 
 # Terraform
 .terraform/
-terraform.tfstate
-terraform.tfstate.backup
+*.tfstate
+*.tfstate.backup
+# Lock files generated inside Terragrunt env directories (kept in src/* instead)
+envs/*/.terraform.lock.hcl
+
+# Terragrunt
+.terragrunt-cache/
 
 # Build outputs
 node_modules/

@@ -1,68 +1,78 @@
 # ImageTestEnv Project Context
 
+## Summary
+
+The repository was transformed into a reusable Terraform/Ansible/Kubernetes
+template with Terragrunt. The previous intermediate layout (`modules/`,
+`terraform/`, `terragrunt/`) was replaced by four self-contained environment
+roots under `src/`, wired to the Terragrunt units under `envs/`.
+
 ## What Has Been Done
 
-### Terraform Modules Created
-- `modules/vpc` (main.tf, variables.tf, outputs.tf)
-- `modules/ec2-webserver` (main.tf, variables.tf, outputs.tf)
-- `modules/eks` (main.tf, variables.tf, outputs.tf)
-- `modules/s3-bucket` (main.tf, variables.tf, outputs.tf)
-- `modules/cloudfront-oac` (main.tf, variables.tf, outputs.tf)
-- `modules/budget` (main.tf, variables.tf, outputs.tf)
+### Self-contained Terraform roots (`src/`)
+- `src/ec2-dev` (main.tf, variables.tf, outputs.tf) - EC2 + budget
+- `src/eks-fargate-dev` (main.tf, variables.tf, outputs.tf) - VPC + EKS + budget
+- `src/eks-ec2-s3-dev` (main.tf, variables.tf, outputs.tf) - VPC + EKS + S3 + CloudFront + budget
+- `src/local-wsl-dev` (main.tf, variables.tf, outputs.tf) - k3s via local-exec
 
-### Composite Components (Env Modules)
-- `modules/ec2-env` (main.tf, variables.tf, outputs.tf)
-- `modules/eks-fargate-env` (main.tf, variables.tf, outputs.tf)
-- `modules/eks-s3-env` (main.tf, variables.tf, outputs.tf)
-- `modules/local-k3s` (main.tf, variables.tf, outputs.tf)
+Each root is cache-safe: no relative sibling paths, only registry modules from
+`terraform-aws-modules`.
 
 ### Terragrunt Configuration
-- Root `terragrunt.hcl` with provider generation and common locals
-- Environment configurations:
+- Root `root.hcl` with provider generation (aws ~> 6.0, Terraform >= 1.9)
+  and common locals
+- Environment configurations with `terraform.source` pointing to `src/*`:
   - `envs/ec2-dev/terragrunt.hcl`
   - `envs/eks-fargate-dev/terragrunt.hcl`
   - `envs/eks-ec2-s3-dev/terragrunt.hcl`
   - `envs/local-wsl-dev/terragrunt.hcl`
 
 ### Ansible Roles and Playbooks
-- Roles:
-  - `nginx` (tasks/main.yml, handlers/main.yml)
-  - `deploy-site` (tasks/main.yml)
-  - `eks` (tasks/main.yml)
-- Playbooks:
-  - `playbooks/ec2.yml`
-  - `playbooks/eks-deploy.yml`
+- Roles: `nginx`, `deploy-site`, `eks`
+- Playbooks: `ansible/playbooks/ec2.yml`, `ansible/playbooks/eks-deploy.yml`
 
 ### Kubernetes Manifests
-- Base manifests in `kubernetes/base/`:
-  - `namespace.yaml`
-  - `deployment.yaml`
-  - `service.yaml`
+- Base manifests in `kubernetes/base/`: `namespace.yaml`, `deployment.yaml`, `service.yaml`
 
 ### GitHub Actions
-- Workflow for manual deployment: `.github/workflows/deploy.yml`
+- `validate.yml` - CI on push/PR (terraform fmt/validate, ansible, yamllint, shellcheck)
+- `deploy.yml` - manual apply/destroy per scenario with AWS OIDC
+- `build-images.yml` - manual image builds for the feature branches
 
 ### Scripts
-- Existing scripts from the original structure were preserved and integrated where applicable.
+- `scripts/deploy.sh`, `scripts/destroy.sh` - scenario-aware lifecycle control
+- `scripts/install-wsl-kubernetes.sh`, `scripts/configure-wsl-network.sh` - WSL helpers
+
+### Tooling
+- Makefile with validate/fmt/init/plan/apply/destroy/output/lint/test targets
+- pre-commit configuration (terraform, ansible-lint, yamllint, shellcheck)
+- Documentation in `docs/`
+
+## Validation status
+
+- Terraform: `terraform init` + `validate` pass for all `src/*` roots (TF 1.16.2,
+  aws provider 6.x)
+- Terragrunt: `render` + `init` pass for all four envs; `plan` pass for
+  `local-wsl-dev` (no cloud credentials needed)
+- Ansible: playbook syntax checks pass
+- Kubernetes: manifests parse cleanly under yamllint
 
 ## What Remains to Be Done
 
-- [ ] Finalize and test the Terraform modules with actual Terraform runs (init, plan, apply) in each environment
-- [ ] Validate the Ansible playbooks and roles with actual execution
-- [ ] Test the Kubernetes manifests in a cluster (local or EKS)
-- [ ] Create documentation (README.md, usage instructions) in the `docs/` directory
-- [ ] Set up pre-commit hooks for Terraform, Ansible, YAML, etc.
-- [ ] Create a Makefile for common tasks (init, plan, apply, destroy, test, etc.)
-- [ ] Remove the old directory structure (the original ImageTestEnv-ec2-s3, ImageTestEnv-fargate, ImageTestEnv-local-wsl) after verifying the new structure works
-- [ ] Commit and push the changes to a remote Git repository
-- [ ] Consider adding automated tests (e.g., Terratest, Ansible molecule, k8s testing)
+- [ ] Run `terragrunt apply` against a real AWS account for `ec2-dev`,
+      `eks-fargate-dev` and `eks-ec2-s3-dev` (requires AWS credentials/OIDC role)
+- [ ] Deploy the demo workload to a real cluster (EKS or local k3s) and observe
+      the readiness probes
+- [ ] If the previous `modules/` layout is still referenced anywhere (docs,
+      branches), update or remove those references
+- [ ] Consider adding automated infrastructure tests (Terratest / InSpec /
+      k8s conformance) once the apply path is verified
 
 ## Next Steps for Continuation
 
-To continue working on this project in a new chat, you can:
-
-1. Review the current state of the files in the `ImageTestEnv` directory.
-2. Run `terraform init` and `terraform plan` in one of the environment directories (e.g., `envs/ec2-dev`) to validate the Terragrunt configuration.
-3. Check the Ansible syntax with `ansible-playbook --syntax-check`.
-4. Validate the Kubernetes manifests with `kubectl apply --dry-run=client`.
-5. Proceed with the remaining tasks listed above.
+1. Export AWS credentials or configure `AWS_ROLE_ARN` OIDC in GitHub.
+2. Run `make validate` to confirm the tree is healthy.
+3. Run `./scripts/deploy.sh ec2-dev` (or the manual `deploy.yml` action) and
+   verify the nginx page and the budget alert.
+4. Repeat for the EKS scenarios, then `./scripts/destroy.sh <scenario>`.
+5. Test `local-wsl-dev` on an actual WSL2 host (k3s + port forwarding).

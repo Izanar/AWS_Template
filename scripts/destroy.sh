@@ -1,23 +1,28 @@
 #!/usr/bin/env bash
+# Destroy one environment managed by Terragrunt.
+# Usage: ./scripts/destroy.sh [scenario]
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-command -v terragrunt >/dev/null || { echo "terragrunt is required" >&2; exit 1; }
-command -v aws >/dev/null || { echo "aws CLI is required" >&2; exit 1; }
-read -r -p "AWS region [eu-central-1]: " aws_region
-aws_region="${aws_region:-eu-central-1}"
-read -r -p "Expected AWS account ID (optional): " expected_account_id
-actual_account_id="$(aws sts get-caller-identity --query Account --output text)"
-echo "Using AWS account: ${actual_account_id}"
-if [[ -n "$expected_account_id" && "$expected_account_id" != "$actual_account_id" ]]; then
-  echo "AWS account mismatch; refusing to continue." >&2
+
+SCENARIO="${1:-ec2-dev}"
+ENV_DIR="envs/${SCENARIO}"
+
+if [[ ! -f "${ENV_DIR}/terragrunt.hcl" ]]; then
+  echo "Unknown scenario: ${SCENARIO}" >&2
+  echo "Available: ec2-dev eks-fargate-dev eks-ec2-s3-dev local-wsl-dev" >&2
   exit 1
 fi
-read -r -p "SSH public key path [$HOME/.ssh/id_rsa.pub]: " public_key_path
-public_key_path="${public_key_path:-$HOME/.ssh/id_rsa.pub}"
-read -r -p "Destroy all Terraform-managed main resources? [yes/no]: " confirmation
+
+command -v terragrunt >/dev/null || { echo "terragrunt is required" >&2; exit 1; }
+
+read -r -p "AWS region [eu-central-1]: " aws_region
+aws_region="${aws_region:-eu-central-1}"
+export AWS_DEFAULT_REGION="$aws_region"
+
+read -r -p "Destroy all Terraform-managed resources for '${SCENARIO}'? [yes/no]: " confirmation
 [[ "$confirmation" == "yes" ]] || { echo "Cancelled."; exit 0; }
 
-terragrunt --working-dir terragrunt destroy --non-interactive --auto-approve \
-  -var="aws_region=${aws_region}" \
-  -var="public_key_path=${public_key_path}"
+echo ">>> Destroying scenario '${SCENARIO}' ..."
+terragrunt --working-dir "${ENV_DIR}" init
+terragrunt --working-dir "${ENV_DIR}" destroy --auto-approve

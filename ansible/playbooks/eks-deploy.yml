@@ -4,13 +4,16 @@
   connection: local
   gather_facts: false
   vars:
-    kubernetes_dir: "{{ playbook_dir }}/../kubernetes/base"
+    kubernetes_manifests:
+      - "{{ playbook_dir }}/../kubernetes/base/namespace.yaml"
+      - "{{ playbook_dir }}/../kubernetes/base/deployment.yaml"
+      - "{{ playbook_dir }}/../kubernetes/base/service.yaml"
     app_repo_url: "https://github.com/Izanar/AI_Nginx.git"
     app_cache_dir: /tmp/ai-nginx
     image_repository: "ghcr.io/izanar/image-test-env-kubernetes"
     image_tag: "{{ lookup('env', 'APP_IMAGE_TAG') | default('latest', true) }}"
-    namespace: "weather-demo"
+    k8s_namespace: "weather-demo"
     deployment_name: "weather-app"
     app_label: "weather-app"
   roles:
-    - eks
+    - role: "{{ playbook_dir }}/../roles/eks"
