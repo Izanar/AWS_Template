@@ -1,8 +1,10 @@
 # ImageTestEnv
 
-A hands-on infrastructure template that deploys the same demo application
+A hands-on infrastructure template that deploys the [AI_Nginx](https://github.com/Izanar/AI_Nginx)
+demo application (custom nginx site with the Kyiv Skyline static + audio page)
 through four different setups using **Terraform**, **Terragrunt**, **Ansible**
-and **Kubernetes**.
+and **Kubernetes**. Every scenario ends with the same app running: nginx
+installed and configured, the AI_Nginx content served and a smoke test passed.
 
 | Scenario | Infrastructure | Where |
 |---|---|---|

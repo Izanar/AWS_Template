@@ -15,8 +15,11 @@ make install-tools
 
 ## Scenario run guides
 
-Each scenario is a Terragrunt environment under `envs/`. Deploy creates real,
-billable resources (except `local-wsl`, which is local only).
+Every scenario deploys the same [AI_Nginx](https://github.com/Izanar/AI_Nginx)
+application: nginx is installed and started, the AI_Nginx content is served,
+and a smoke test verifies the page responds. Each scenario is a Terragrunt
+environment under `envs/`. Deploy creates real, billable resources (except
+`local-wsl`, which is local only).
 
 ### 1. `ec2` — AWS EC2 + nginx (Ansible)
 

@@ -24,5 +24,14 @@ read -r -p "Destroy all Terraform-managed resources for '${SCENARIO}'? [yes/no]:
 [[ "$confirmation" == "yes" ]] || { echo "Cancelled."; exit 0; }
 
 echo ">>> Destroying scenario '${SCENARIO}' ..."
+
+if [[ "$SCENARIO" == "local-wsl" ]] && command -v kubectl >/dev/null; then
+  echo ">>> Removing the AI_Nginx demo from local Kubernetes ..."
+  kubectl delete -f kubernetes/local/service.yaml --ignore-not-found
+  kubectl delete -f kubernetes/local/deployment.yaml --ignore-not-found
+  kubectl delete -f kubernetes/local/namespace.yaml --ignore-not-found
+  echo ">>> App checkout /opt/ai-nginx left in place (remove it manually if unwanted)."
+fi
+
 terragrunt --working-dir "${ENV_DIR}" init
 terragrunt --working-dir "${ENV_DIR}" destroy --auto-approve

@@ -56,16 +56,57 @@ case "$SCENARIO" in
     ssh_cidrs+="]"
 
     public_ip="$(terragrunt --working-dir "${ENV_DIR}" output -raw public_ip)"
-    cat > /tmp/image-test-env-inventory.ini <<EOF
+    cat > /tmp/image-test-env-inventory.ini <<INV
 [webservers]
-web1 ansible_host=${public_ip} ansible_user=ubuntu ansible_ssh_private_key_file=${public_key_path%.*} ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
-EOF
-    ansible-playbook -i /tmp/image-test-env-inventory.ini ansible/playbooks/ec2.yml
-    curl -fsS --max-time 60 "http://${public_ip}" -o /dev/null
-    printf 'Application URL: http://%s\n' "$public_ip"
+${public_ip} ansible_user=ubuntu ansible_ssh_private_key_file=${public_key_path%.pub}
+[webservers:vars]
+nginx_ssh_cidrs=${ssh_cidrs}
+INV
+    ANSIBLE_ROLES_PATH="ansible/roles" ansible-playbook -i /tmp/image-test-env-inventory.ini ansible/playbooks/ec2.yml
+    nginx_url="http://${public_ip}"
+    echo ">>> AI_Nginx demo is live at: $nginx_url"
+    curl -fsSL "$nginx_url" >/dev/null && echo ">>> Smoke test OK"
     ;;
+
+  eks-fargate)
+    command -v kubectl >/dev/null || { echo "kubectl is required for the EKS scenarios" >&2; exit 1; }
+    cluster_name="$(terragrunt --working-dir "${ENV_DIR}" output -raw cluster_name)"
+    aws eks update-kubeconfig --name "$cluster_name" --region "$aws_region"
+    echo ">>> Applying the EKS deployment playbook (AI_Nginx image) ..."
+    ANSIBLE_ROLES_PATH="ansible/roles" ansible-playbook ansible/playbooks/eks-deploy.yml
+    echo ">>> Deployed. kubectl get pods -n weather-demo to watch it come up."
+    ;;
+
+  eks-ec2-s3)
+    command -v kubectl >/dev/null || { echo "kubectl is required for the EKS scenarios" >&2; exit 1; }
+    cluster_name="$(terragrunt --working-dir "${ENV_DIR}" output -raw cluster_name)"
+    aws eks update-kubeconfig --name "$cluster_name" --region "$aws_region"
+    echo ">>> Applying the EKS deployment playbook (AI_Nginx image) ..."
+    ANSIBLE_ROLES_PATH="ansible/roles" ansible-playbook ansible/playbooks/eks-deploy.yml
+    echo ">>> Deployed. kubectl get pods -n weather-demo to watch it come up."
+    ;;
+
+  local-wsl)
+    command -v kubectl >/dev/null || { echo "kubectl is required for the local scenario" >&2; exit 1; }
+    echo ">>> Cloning the AI_Nginx application repository ..."
+    if [[ -d /opt/ai-nginx/.git ]]; then
+      git -C /opt/ai-nginx pull --ff-only
+    else
+      sudo mkdir -p /opt/ai-nginx
+      sudo git clone --depth 1 https://github.com/Izanar/AI_Nginx.git /opt/ai-nginx
+    fi
+    echo ">>> Applying local Kubernetes manifests (AI_Nginx via nginx + hostPath) ..."
+    kubectl apply -f kubernetes/local/namespace.yaml
+    kubectl apply -f kubernetes/local/deployment.yaml
+    kubectl apply -f kubernetes/local/service.yaml
+    kubectl rollout status deployment/weather-app -n weather-demo --timeout=180s
+    node_port="$(terragrunt --working-dir "${ENV_DIR}" output -raw node_port 2>/dev/null || echo 30080)"
+    echo ">>> AI_Nginx demo is live at: http://localhost:${node_port}"
+    curl -fsSL "http://localhost:${node_port}" >/dev/null && echo ">>> Smoke test OK"
+    ;;
+
   *)
-    echo ">>> Deployment finished. Inspect outputs with:"
-    echo "    terragrunt --working-dir ${ENV_DIR} output"
+    echo "Unknown scenario: $SCENARIO" >&2
+    exit 1
     ;;
 esac

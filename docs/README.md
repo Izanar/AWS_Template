@@ -1,8 +1,9 @@
 # ImageTestEnv documentation
 
 Welcome to the ImageTestEnv documentation. This project is a hands-on,
-reusable infrastructure template that demonstrates the same demo application
-deployed with four different setups:
+reusable infrastructure template that demonstrates the
+[AI_Nginx](https://github.com/Izanar/AI_Nginx) demo application deployed with
+four different setups:
 
 | Scenario | Infrastructure | Applies to |
 |---|---|---|
