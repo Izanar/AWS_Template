@@ -42,7 +42,13 @@ install-tools:
 	  TG_VER=$$(curl -fsSL https://api.github.com/repos/gruntwork-io/terragrunt/releases/latest | sed -n 's/.*"tag_name": "v\([^"]*\)".*/\1/p'); \
 	  curl -fsSL -o $(HOME)/.local/bin/terragrunt "https://github.com/gruntwork-io/terragrunt/releases/download/v$${TG_VER}/terragrunt_linux_amd64"; \
 	  chmod +x $(HOME)/.local/bin/terragrunt; }
-	@python3 -m venv --without-pip $(PYVENV)/.. 2>/dev/null || true
+	@if [ ! -d "$(PYVENV)/.." ]; then \
+	  python3 -m venv $(PYVENV)/.. 2>/dev/null || python3 -m venv --without-pip $(PYVENV)/..; \
+	fi
+	@$(PYVENV)/python -m pip --version >/dev/null 2>&1 || { \
+	  echo "Pip not found in venv, bootstrapping ensurepip..."; \
+	  $(PYVENV)/python -m ensurepip --default-pip; \
+	  $(PYVENV)/python -m pip install -q --upgrade pip; }
 	$(PYVENV)/python -m pip install -q ansible-core ansible-lint yamllint pre-commit shellcheck-py
 
 init:
