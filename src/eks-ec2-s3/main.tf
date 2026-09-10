@@ -175,6 +175,30 @@ resource "aws_s3_bucket_policy" "cloudfront_read" {
   policy = data.aws_iam_policy_document.s3_cloudfront_read.json
 }
 
+resource "random_password" "app_password" {
+  length           = 16
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+resource "aws_secretsmanager_secret" "app_password" {
+  name                    = "${var.project_name}-${var.environment}-app-password"
+  recovery_window_in_days = 0
+
+  tags = {
+    Name        = "${var.project_name}-${var.environment}-app-password"
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "app_password" {
+  secret_id = aws_secretsmanager_secret.app_password.id
+  secret_string = jsonencode({
+    password = random_password.app_password.result
+  })
+}
+
 resource "aws_budgets_budget" "project" {
   count = trimspace(var.budget_email) == "" ? 0 : 1
 
