@@ -18,3 +18,18 @@ curl -fsSL https://get.k3s.io | K3S_VERSION="${K3S_VERSION}" sh
 
 echo "k3s installed. Run 'k3s kubectl get-nodes' to verify the cluster."
 echo "Note: on WSL2 the k3s server needs to be run inside a systemd session (systemctl start k3s)."
+# Автоматическая настройка KUBECONFIG для текущего пользователя
+USER_HOME=$(eval echo "~${SUDO_USER:-$USER}")
+USER_NAME=${SUDO_USER:-$USER}
+
+echo "==> Configuring KUBECONFIG for user: ${USER_NAME}"
+mkdir -p "${USER_HOME}/.kube"
+sudo cp /etc/rancher/k3s/k3s.yaml "${USER_HOME}/.kube/config"
+sudo chown -R "${USER_NAME}:" "${USER_HOME}/.kube"
+chmod 600 "${USER_HOME}/.kube/config"
+
+# Добавляем переменную в .bashrc, если её там ещё нет
+if ! grep -q "KUBECONFIG" "${USER_HOME}/.bashrc"; then
+    echo 'export KUBECONFIG=~/.kube/config' >> "${USER_HOME}/.bashrc"
+    echo "==> KUBECONFIG added to ${USER_HOME}/.bashrc"
+fi
