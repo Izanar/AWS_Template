@@ -1,0 +1,26 @@
+========================================================================
+НАСТРОЙКА СЕТИ ДЛЯ WINDOWS (WSL2 / k3s)
+========================================================================
+ВАЖНО: Инструкция только для ОС Windows. Для Linux / CI/CD пропускаем.
+
+1. Как узнать IP-адрес WSL:
+Выполнить в обычном терминале Ubuntu (WSL):
+ip -4 addr show eth0 | grep inet
+
+2. Как добавить порт (Запуск):
+Открыть PowerShell от ИМЕНИ АДМИНИСТРАТОРА в Windows, 
+заменить ВАШ_IP на полученный адрес и выполнить одной строкой:
+
+$ip="ВАШ_IP"; netsh interface portproxy delete v4tov4 listenport=30080 listenaddress=0.0.0.0 2>$null; 
+netsh interface portproxy add v4tov4 listenport=30080 listenaddress=0.0.0.0 connectport=30080 connectaddress=$ip; 
+Remove-NetFirewallRule -DisplayName "k3s-30080" 2>$null; 
+New-NetFirewallRule -DisplayName "k3s-30080" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 30080 | Out-Null; 
+Write-Host ">>> [SUCCESS] Доступ открыт на http://localhost:30080" -ForegroundColor Green
+
+3. Как убрать порт (Очистка после дестроя):
+Открыть PowerShell от ИМЕНИ АДМИНИСТРАТОРА в Windows и выполнить одной строкой:
+
+netsh interface portproxy delete v4tov4 listenport=30080 listenaddress=0.0.0.0 2>$null; 
+Remove-NetFirewallRule -DisplayName "k3s-30080" 2>$null; 
+Write-Host ">>> [SUCCESS] Сетевые правила Windows удалены!" -ForegroundColor Yellow
+========================================================================
