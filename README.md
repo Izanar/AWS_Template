@@ -33,13 +33,50 @@ cloud scenarios. `make install-tools` installs everything into your home
 directory.
 
 ```bash
-make validate                       # static checks only
-./scripts/deploy.sh ec2         # full local lifecycle
-./scripts/destroy.sh ec2
+# 1. Install tools (Terraform, Terragrunt, Ansible, Python deps)
+make install-tools
+
+# 2. Validate everything compiles (static checks, no resources created)
+make validate
+
+# 3. Deploy a scenario
+./scripts/deploy.sh <scenario>
+
+# 4. Destroy when done
+./scripts/destroy.sh <scenario>
 ```
+
+### Доступные сценарии
+
+| Сценарий | Команда | Облачные ресурсы? | Что нужно |
+|---|---|---|---|
+| `ec2` | `./scripts/deploy.sh ec2` | Да (EC2 Spot) | AWS creds, `aws` CLI, SSH-ключи |
+| `eks-fargate` | `./scripts/deploy.sh eks-fargate` | Да (EKS) | AWS creds, `aws` CLI, `kubectl` |
+| `eks-ec2-s3` | `./scripts/deploy.sh eks-ec2-s3` | Да (EKS + S3 + CloudFront) | AWS creds, `aws` CLI, `kubectl` |
+| `local-wsl` | `./scripts/deploy.sh local-wsl` | **Нет** | WSL2, `kubectl` |
+
+> **Локальный сценарий (`local-wsl`)** — единственный, который не требует облачных ресурсов и не создаёт расходов. Его можно полностью протестировать локально на WSL2. Подробная пошаговая инструкция с командами для проверки каждого шага есть в [docs/usage.md](docs/usage.md#4-local-wsl--k3s-on-wsl2-no-cloud).
 
 See [docs/usage.md](docs/usage.md) for the complete guide, including the
 manual GitHub Actions deployment and required secrets.
+
+### Команды Makefile
+
+```bash
+make help                          # показать все доступные команды
+make validate                      # статические проверки (Terraform, Ansible, K8s, Shell)
+make install-tools                 # установить Terraform, Terragrunt, Ansible и Python-инструменты
+make init ENV=<scenario>          # terragrunt init для выбранного сценария
+make plan ENV=<scenario>          # terragrunt plan
+make apply ENV=<scenario>         # terragrunt apply (создаёт ресурсы!)
+make output ENV=<scenario>        # показать выходные данные Terraform
+make destroy ENV=<scenario>       # terragrunt destroy
+make fmt                           # отформатировать Terraform-код
+make precommit                     # запустить pre-commit хуки
+```
+
+Поддерживаемые значения `ENV`: `ec2`, `eks-fargate`, `eks-ec2-s3`, `local-wsl`.
+По умолчанию: `ec2`.
 
 ## Cloud credentials
 

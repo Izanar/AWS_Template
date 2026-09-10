@@ -6,12 +6,26 @@
 # 1. Install Terraform, Terragrunt and Python tooling (into ~/.local/bin)
 make install-tools
 
-# 2. Pick a scenario and deploy it (interactive; asks for region/email)
-./scripts/deploy.sh ec2
+# 2. Validate everything compiles (static checks only, no resources created)
+make validate
 
-# 3. When you are done, destroy the same resources
-./scripts/destroy.sh ec2
+# 3. Pick a scenario and deploy it
+#    - Cloud scenarios (ec2, eks-fargate, eks-ec2-s3) require AWS credentials
+#    - Local scenario (local-wsl) runs entirely on your machine
+./scripts/deploy.sh <scenario>
+
+# 4. When you are done, destroy the resources
+./scripts/destroy.sh <scenario>
 ```
+
+### Choosing a scenario
+
+| Scenario | Command | Cloud resources? | What you need |
+|---|---|---|---|
+| `ec2` | `./scripts/deploy.sh ec2` | Yes (EC2 Spot) | AWS creds, `aws` CLI, SSH key pair |
+| `eks-fargate` | `./scripts/deploy.sh eks-fargate` | Yes (EKS) | AWS creds, `aws` CLI, `kubectl` |
+| `eks-ec2-s3` | `./scripts/deploy.sh eks-ec2-s3` | Yes (EKS + S3 + CloudFront) | AWS creds, `aws` CLI, `kubectl` |
+| `local-wsl` | `./scripts/deploy.sh local-wsl` | **No** | WSL2, `kubectl` |
 
 ## Scenario run guides
 
@@ -91,17 +105,187 @@ curl "$(terragrunt --working-dir envs/eks-ec2-s3 output -raw demo_url)"
 
 **Requirements:** WSL2 with `kubectl`. The install script sets up k3s for you.
 
-```bash
-# One-time preparation of WSL2 networking and k3s
-./scripts/install-wsl-kubernetes.sh
-./scripts/configure-wsl-network.sh   # fixes DNS/firewall inside WSL2
+> **Важно:** Это единственный сценарий, который не требует облачных ресурсов и не создаёт расходов. Его можно полностью протестировать локально.
 
-./scripts/deploy.sh local-wsl    # brings up the local k3s demo
-kubectl get nodes                    # single k3s node
+#### Пошаговый алгоритм запуска (локальный сценарий)
+
+Выполняйте команды по порядку. Каждая команда — это отдельный шаг, который можно проверить перед переходом к следующему.
+
+**Шаг 0: Подготовка (один раз)**
+
+Убедитесь, что у вас установлены требуемые инструменты:
+
+```bash
+# Проверка версий
+terragrunt --version          # >= 0.68.0
+terraform --version           # >= 1.9.0
+kubectl version --client      # any recent version
+```
+
+Если инструменты не установлены, установите их:
+
+```bash
+make install-tools
+```
+
+**Шаг 1: Установка k3s в WSL2 (один раз)**
+
+```bash
+./scripts/install-wsl-kubernetes.sh
+```
+
+Эта команда:
+- Скачивает и устанавливает k3s (Kubernetes lightweight) в ваше WSL2 окружение
+- Если k3s уже установлен, покажет текущую версию и предложит варианты
+
+После установки проверьте, что k3s работает:
+
+```bash
+k3s kubectl get nodes
+```
+
+Ожидаемый вывод: один узел в статусе `Ready`.
+
+> **Примечание:** На WSL2 сервер k3s должен работать внутри сессии systemd. Если узел не появляется, запустите `systemctl start k3s`.
+
+**Шаг 2: Настройка сетевого доступа (один раз)**
+
+```bash
+./scripts/configure-wsl-network.sh
+```
+
+Эта команда выведет инструкции по настройке сети для доступа к приложению с Windows-хоста. Скопируйте и выполните команды из вывода в PowerShell (на Windows).
+
+Суть настройки:
+1. Найти IP-адрес WSL2: `ip -4 addr show eth0 | grep inet`
+2. На Windows (PowerShell) добавить проброс порта:
+   ```powershell
+   netsh interface portproxy add v4tov4 listenport=30080 listenaddress=0.0.0.0 connectport=30080 connectaddress=<WSL2_IP>
+   ```
+3. Разрешить трафик в брандмауэре Windows:
+   ```powershell
+   netsh advfirewall firewall add rule name='k3s-30080' dir=in action=allow protocol=TCP localport=30080
+   ```
+4. Проверить доступность с Windows:
+   ```powershell
+   curl http://localhost:30080
+   ```
+
+**Шаг 3: Запуск демо-приложения**
+
+```bash
+./scripts/deploy.sh local-wsl
+```
+
+Эта команда:
+- Клонирует репозиторий AI_Nginx (если ещё не склонирован) в `/opt/ai-nginx`
+- Применяет Kubernetes манифесты из `kubernetes/local/`
+- Дожидается, пока под приложения станет готовым (до 180 секунд)
+- Выводит URL для доступа и запускает smoke-тест
+
+**Шаг 4: Проверка результатов**
+
+После успешного деплоя проверьте, что всё работает:
+
+```bash
+# Посмотреть узлы кластера
+kubectl get nodes
+
+# Посмотреть все поды во всех namespace
 kubectl get pods -A
 
-./scripts/destroy.sh local-wsl   # removes the local demo resources
+# Проверить конкретный под приложения
+kubectl get pods -n ai-nginx-demo
+
+# Посмотреть логи приложения
+kubectl logs -n ai-nginx-demo -l app=ai-nginx-app
+
+# Проверить сервис
+kubectl get svc -n ai-nginx-demo
 ```
+
+Ожидаемый результат:
+- 1 узел (k3s) в статусе `Ready`
+- Под `ai-nginx-app` в namespace `ai-nginx-demo` в статусе `Running`
+- Сервис типа `NodePort` на порту `30080`
+
+**Шаг 5: Доступ к приложению**
+
+Приложение доступно по адресу:
+
+```
+http://localhost:30080
+```
+
+Если вы на Windows, убедитесь, что выполнили шаги из **Шага 2** для проброса порта.
+
+Проверка из WSL2:
+
+```bash
+curl http://localhost:30080
+```
+
+Проверка с Windows (PowerShell):
+
+```powershell
+curl http://localhost:30080
+```
+
+**Шаг 6: Остановка и удаление**
+
+Когда закончите тестирование, удалите ресурсы:
+
+```bash
+./scripts/destroy.sh local-wsl
+```
+
+Эта команда:
+- Удаляет Kubernetes ресурсы (сервис, деплоймент, namespace)
+- Оставляет клонированный репозиторий в `/opt/ai-nginx` (удалите вручную при необходимости: `sudo rm -rf /opt/ai-nginx`)
+
+---
+
+#### Полный цикл команд (для справки)
+
+```bash
+# === ПОДГОТОВКА (один раз) ===
+make install-tools                          # установка инструментов
+./scripts/install-wsl-kubernetes.sh         # установка k3s
+./scripts/configure-wsl-network.sh          # настройка сети (выполнить команды в PowerShell)
+
+# === ЗАПУСК ===
+./scripts/deploy.sh local-wsl              # деплой приложения
+
+# === ПРОВЕРКА ===
+kubectl get nodes                           # проверить узлы
+kubectl get pods -A                         # проверить поды
+curl http://localhost:30080                 # проверить приложение
+
+# === ОЧИСТКА ===
+./scripts/destroy.sh local-wsl             # удалить ресурсы
+sudo rm -rf /opt/ai-nginx                  # удалить клонированный репозиторий (опционально)
+```
+
+---
+
+#### Отладка (troubleshooting)
+
+**k3s не запускается:**
+```bash
+systemctl status k3s
+journalctl -u k3s -n 50
+```
+
+**Под приложения не становится Ready:**
+```bash
+kubectl describe pod -n ai-nginx-demo -l app=ai-nginx-app
+kubectl logs -n ai-nginx-demo -l app=ai-nginx-app --previous
+```
+
+**Порт не доступен с Windows:**
+- Проверьте, что WSL2 IP корректен: `ip -4 addr show eth0 | grep inet`
+- Проверьте проброс порта: `netsh interface portproxy show all`
+- Проверьте правило брандмауэра: `netsh advfirewall firewall show rule name='k3s-30080'`
 
 Nothing billable here; it runs entirely on your machine.
 
