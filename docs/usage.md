@@ -4,7 +4,8 @@
 > Default scenario is now local-wsl; kubeconfig is `~/.kube/aws-template-k3s.yaml`.
 > GitHub Deploy provisions infrastructure only and requires an existing S3 backend.
 > EKS additionally requires Ansible and a published accessible application image.
-> AWS Budget is an alert, not a spending cap. S3 audio upload is not automated.
+> AWS Budget is an alert, not a spending cap. The `eks-ec2-s3` playbook uploads
+> audio from the AI_Nginx repository to the scenario's private S3 bucket.
 
 
 ## Quick start

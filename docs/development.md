@@ -55,6 +55,8 @@ Configure them once with `pre-commit install`.
 The Kubernetes scenarios were consolidated into `main`; the old per-scenario
 branches were removed. Application images are built from the
 [Izanar/AI_Nginx](https://github.com/Izanar/AI_Nginx) repository itself via the
-manual `build-images.yml` workflow: `aws-template-kubernetes` (full content,
-used by `eks-fargate`) and `aws-template-s3` (static content only, audio served
-from private S3 through CloudFront, used by `eks-ec2-s3`).
+manual `build-images.yml` workflow using its own Dockerfile. Both EKS scenarios
+use `ghcr.io/izanar/aws-template-kubernetes`. Only `eks-ec2-s3` creates the
+application audio bucket: its playbook uploads `html/audio/` from AI_Nginx to
+private S3 and configures nginx to redirect `/audio/*` through CloudFront.
+The common image retains the upstream content; the S3 route takes precedence.

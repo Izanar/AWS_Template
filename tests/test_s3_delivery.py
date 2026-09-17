@@ -71,19 +71,34 @@ class S3DeliveryTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(args[3], 's3://test-audio-bucket/audio/')
 
+    def test_s3_uses_upstream_common_image_and_only_audio_scenario_has_bucket(self):
+        workflow = yaml.safe_load((ROOT / '.github/workflows/build-images.yml').read_text())
+        builds = [step for step in workflow['jobs']['build']['steps']
+                  if step.get('uses', '').startswith('docker/build-push-action@')]
+        self.assertEqual(len(builds), 1)
+        self.assertEqual(builds[0]['with']['context'], 'app')
+        self.assertNotIn('file', builds[0]['with'])
+        self.assertFalse((ROOT / 'docker/s3.Dockerfile').exists())
+        play = yaml.safe_load((ROOT / 'ansible/playbooks/eks-s3-deploy.yml').read_text())[0]
+        self.assertEqual(play['vars']['image_repository'], 'ghcr.io/izanar/aws-template-kubernetes')
+        self.assertEqual(play['vars']['app_repo_url'], 'https://github.com/Izanar/AI_Nginx.git')
+        for scenario in ('ec2', 'eks-fargate', 'local-wsl', 'eks-ec2-s3'):
+            source = '\n'.join(path.read_text() for path in (ROOT / 'src' / scenario).glob('*.tf'))
+            self.assertEqual('resource "aws_s3_bucket"' in source, scenario == 'eks-ec2-s3')
+
     def test_rendered_config_routes_audio_and_rolls_out_on_config_change(self):
         env = Environment(loader=FileSystemLoader(str(ROOT / 'ansible/roles/eks_s3/templates')),
                           undefined=StrictUndefined)
         env.filters['hash'] = lambda value, algorithm: hashlib.new(algorithm, value.encode()).hexdigest()
         values = dict(k8s_namespace='ai-nginx-demo', deployment_name='ai-nginx-app',
                       cloudfront_domain='d123.cloudfront.net',
-                      image_repository='ghcr.io/izanar/aws-template-s3', image_tag='test-sha')
+                      image_repository='ghcr.io/izanar/aws-template-kubernetes', image_tag='test-sha')
         env.globals['lookup'] = lambda kind, name: env.get_template(name).render(**values)
         config = yaml.safe_load(env.get_template('configmap.yaml.j2').render(**values))
         deployment = yaml.safe_load(env.get_template('deployment.yaml.j2').render(**values))
         self.assertIn('return 302 https://d123.cloudfront.net$request_uri;', config['data']['default.conf'])
         pod = deployment['spec']['template']
-        self.assertEqual(pod['spec']['containers'][0]['image'], 'ghcr.io/izanar/aws-template-s3:test-sha')
+        self.assertEqual(pod['spec']['containers'][0]['image'], 'ghcr.io/izanar/aws-template-kubernetes:test-sha')
         self.assertEqual(pod['spec']['volumes'][0]['configMap']['name'], config['metadata']['name'])
         before = pod['metadata']['annotations']['checksum/audio-config']
         values['cloudfront_domain'] = 'd456.cloudfront.net'

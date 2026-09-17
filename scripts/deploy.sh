@@ -8,6 +8,7 @@
 #   eks-ec2-s3   AWS EKS + S3 + CloudFront (needs AWS credentials)
 #   local-wsl    Local k3s on WSL2 (no cloud credentials required)
 set -euo pipefail
+export PATH="$PATH:/usr/local/bin"
 
 cd "$(dirname "$0")/.."
 

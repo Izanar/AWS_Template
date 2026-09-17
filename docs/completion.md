@@ -1,29 +1,10 @@
-# Завершение бесплатного этапа и контроль затрат
-
-## Что подтверждено
-
-2026-09-17: Terraform 1.9.8 / Terragrunt 0.68.2, все четыре Terraform/Terragrunt
-validate; local-wsl init/validate/plan в чистом кэше; Ansible syntax/lint,
-yamllint, shellcheck, TF/HCL fmt, actionlint и 11 unittest проверок прошли.
-
-Живой EC2 E2E пройден 2026-09-17 (с согласия владельца): Spot t3.micro создан
-из проверенного плана, Ansible развернул AI_Nginx, HTTP-проверка вернула страницу
-Kyiv Skyline, destroy удалил все 4 ресурса; очистка подтверждена через AWS API
-(инстанс/volume/SG/keypair/Spot request отсутствуют, state пуст).
-Одноразовая стоимость минуты работы принята владельцем; проверить начисление
-можно в Billing после обновления данных.
-
-EKS-сценарии (eks-fargate, eks-ec2-s3) в живом исполнении НЕ запланированы
-(решение владельца по стоимости); код и README-описания сохранены как справочные.
-GitHub build/deploy не запускались. При публикации используется `[skip ci]`,
-чтобы не тратить возможные платные минуты Actions.
+# Контроль затрат, state и очистка
 
 ## Бесплатный путь
 
-В WSL2 PID 1 должен быть `systemd`. В текущем хосте он `init(Ubuntu)`:
-preflight останавливает запуск до Terraform. Необходимо включить systemd
-в `/etc/wsl.conf` (`[boot]` и `systemd=true`) и выполнить `wsl --shutdown`
-из Windows PowerShell. Это остановит другие WSL-процессы, поэтому агент этого не делал.
+В WSL2 PID 1 должен быть `systemd`. Для включения добавьте в `/etc/wsl.conf`
+секцию `[boot]` с `systemd=true` и выполните `wsl --shutdown` из Windows
+PowerShell. Команда остановит все WSL-процессы; затем откройте WSL снова.
 Для установки k3s нужен sudo. Установите make, curl, git, Python/venv заранее;
 `make install-tools` не устанавливает AWS CLI, kubectl или системный make.
 
@@ -80,14 +61,12 @@ GitHub Deploy создаёт **только инфраструктуру**; по
 EKS control plane, NAT, public IPv4, storage и прочее оплачиваются даже без приложения.
 Для нулевых новых облачных затрат не запускайте облачный apply.
 
-## Границы готовности
+## Требования к приложению
 
 - EKS образы должны быть опубликованы и доступны без приватных pull credentials;
   образ содержит приложение и curl. Содержимое живых подов не модифицируется.
-- Fargate DNS scheduling/CoreDNS annotation, версии EKS и readiness проверяются live отдельно.
-- S3/CloudFront создаются как инфраструктура; загрузка аудио выполняется
-  плейбуком `eks-s3-deploy` (скрипт `scripts/sync-audio-to-s3.sh`, путь
-  `html/audio/`), а nginx отправляет `/audio/*` на CloudFront. Проверено
-  офлайн-тестами; live-подтверждение относится к EKS-пути, который не запланирован.
-- Полный живой E2E выполнен для `ec2`. Живой E2E `local-wsl` остаётся
-  непроверенным (см. docs/e2e.md), а не считается успешным заранее.
+- Для EKS проверьте поддерживаемую версию Kubernetes, DNS и readiness.
+- Только `eks-ec2-s3` создаёт S3/CloudFront для аудио. Плейбук `eks-s3-deploy`
+  загружает `html/audio/` из репозитория AI_Nginx скриптом
+  `scripts/sync-audio-to-s3.sh`; nginx отправляет `/audio/*` на CloudFront.
+- Сквозная проверка и очистка описаны в [e2e.md](e2e.md).

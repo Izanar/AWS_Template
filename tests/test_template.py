@@ -58,6 +58,45 @@ class TemplateTests(unittest.TestCase):
             self.assertIn('Enable systemd', result.stderr)
             self.assertFalse(marker.exists())
 
+    def test_k3s_waits_for_registration_before_readiness(self):
+        for mode in ('delayed', 'absent', 'not-ready'):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                count = root / 'count'
+                ready = root / 'ready'
+                tools = {
+                    'ps': 'echo systemd',
+                    'sudo': 'exit 0',
+                    'k3s': 'echo "k3s version v1.31.1+k3s1 (test)"',
+                    'sleep': 'exit 0',
+                    'kubectl': '''if [ "$1" = get ]; then
+n=0
+[ ! -f "$COUNT" ] || n=$(cat "$COUNT")
+n=$((n + 1))
+echo "$n" > "$COUNT"
+[ "$MODE" != absent ] || exit 0
+[ "$n" -ne 1 ] || exit 1
+[ "$n" -gt 2 ] || exit 0
+echo node/test
+else
+[ "$(cat "$COUNT")" -ge 3 ] || exit 99
+touch "$READY"
+[ "$MODE" != not-ready ] || exit 1
+fi''',
+                }
+                for name, body in tools.items():
+                    executable = root / name
+                    executable.write_text('#!/bin/sh\n' + body + '\n')
+                    executable.chmod(0o755)
+                env = dict(os.environ, HOME=directory, COUNT=str(count), READY=str(ready),
+                           MODE=mode, PATH=directory + ':' + os.environ['PATH'])
+                result = subprocess.run(['bash', str(ROOT / 'scripts/install-wsl-kubernetes.sh')],
+                                        env=env, capture_output=True, text=True, timeout=10)
+                self.assertEqual(result.returncode, 0 if mode == 'delayed' else 1,
+                                 result.stdout + result.stderr)
+                self.assertEqual(ready.exists(), mode != 'absent')
+                self.assertEqual(int(count.read_text()), 36 if mode == 'absent' else 3)
+
     def test_workflow_rejects_missing_state_and_unconfirmed_apply(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/deploy.yml').read_text())
         steps = workflow['jobs']['deploy']['steps']

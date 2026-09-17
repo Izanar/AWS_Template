@@ -7,7 +7,7 @@
     app_repo_url: "https://github.com/Izanar/AI_Nginx.git"
     audio_bucket_name: "{{ lookup('env', 'AUDIO_BUCKET_NAME') }}"
     cloudfront_domain: "{{ lookup('env', 'CLOUDFRONT_DOMAIN') }}"
-    image_repository: "ghcr.io/izanar/aws-template-s3"
+    image_repository: "ghcr.io/izanar/aws-template-kubernetes"
     image_tag: "{{ lookup('env', 'APP_IMAGE_TAG') | default('latest', true) }}"
     k8s_namespace: ai-nginx-demo
     deployment_name: ai-nginx-app

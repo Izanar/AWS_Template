@@ -17,8 +17,6 @@ AWS_Template/
 ├── ansible/
 │   ├── playbooks/              # ec2.yml, eks-deploy.yml, eks-s3-deploy.yml
 │   └── roles/                  # deploy_site, eks, eks_s3, nginx
-├── docker/
-│   └── s3.Dockerfile           # App image without audio (CloudFront serves audio)
 ├── docs/                       # architecture, usage, development, completion
 ├── envs/                       # Terragrunt units: ec2, eks-ec2-s3, eks-fargate, local-wsl
 ├── kubernetes/

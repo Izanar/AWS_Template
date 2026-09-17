@@ -65,8 +65,8 @@ Each root is cache-safe: no relative sibling paths, only registry modules from
 
 ## Validation status
 
-- Terraform: `terraform init` + `validate` pass for all `src/*` roots (TF 1.16.2,
-  aws provider 6.x)
+- Terraform: `terraform init` + `validate` pass for all `src/*` roots (TF 1.9.8,
+  AWS provider 6.x for EC2, 5.x for EKS; no AWS provider for local-wsl)
 - Terragrunt: `render` + `init` pass for all four envs; `plan` pass for
   `local-wsl` (no cloud credentials needed)
 - Ansible: playbook syntax checks pass
@@ -78,13 +78,14 @@ Each root is cache-safe: no relative sibling paths, only registry modules from
       Spot t3.micro, Ansible deploy, HTTP smoke test, destroy; cleanup verified
       through AWS API - instance/volume/SG/keypair/Spot request all gone, state empty)
 - [x] Deploy the demo workload on the `ec2` scenario and observe the smoke test
-      (live). The local k3s path still needs a live E2E run (see docs/e2e.md).
+      (live). Local k3s application E2E is also complete; see docs/completion-context.md.
 - [x] If the previous `modules/` layout is still referenced anywhere (docs,
       branches), update or remove those references (verified: only historical references in architecture doc)
 - [x] Fix Fargate profile selector in `src/eks-fargate/main.tf` (`weather-demo` -> `ai-nginx-demo`)
-- [x] Automated offline regression tests: 11 unittest checks (template, S3
-      delivery with a recorded fake AWS CLI, rendered manifests)
-- [ ] Live E2E for `local-wsl` on a systemd-enabled WSL2 host (docs/e2e.md)
+- [x] Automated offline regression tests: 13 unittest checks (template, S3
+      delivery with a recorded fake AWS CLI, rendered manifests, k3s registration)
+- [x] Live application E2E for `local-wsl`: deploy, browser/HTTP checks, destroy;
+      state empty and app resources removed. k3s/checkout/kubeconfig retained.
 
 ## Explicitly NOT planned (do not schedule for agents)
 
@@ -96,7 +97,8 @@ Each root is cache-safe: no relative sibling paths, only registry modules from
 
 ## Next Steps for Continuation
 
-1. Live E2E of `local-wsl` by the user on a systemd WSL2 host (docs/e2e.md).
+1. Optional full local host cleanup by owner (sudo): uninstall dedicated k3s,
+   remove /opt/ai-nginx and the project kubeconfig. Application cleanup is verified.
 2. Check the Billing entry for the completed EC2 test once data settles.
 3. Optional later: real GitHub OIDC + S3 state backend for the Deploy workflow;
    a first CI run without `[skip ci]` to turn the badge green.

@@ -1,3 +1,5 @@
+# AI agent development context
+
 ## Current verified status — 2026-09-17
 
 Cost-safe hardening is implemented. The cloud EC2 path is live-verified;
@@ -8,7 +10,7 @@ EKS scenarios are reference code and are explicitly NOT scheduled for live runs.
 - All four Terraform roots and Terragrunt environments pass static validation.
 - Local clean-cache init/validate/plan passes without AWS credentials.
 - Ansible syntax/lint, yamllint, shellcheck, HCL/TF formatting, actionlint pass.
-- Eleven offline unittest regression checks cover manifest paths/selectors,
+- Thirteen offline unittest regression checks cover manifest paths/selectors,
   scenario rejection, no-systemd preflight, workflow backend/cost guards and
   the S3 audio delivery path with a recorded fake AWS CLI.
 - Live EC2 E2E completed 2026-09-17 on the real account: Spot t3.micro created
@@ -18,8 +20,21 @@ EKS scenarios are reference code and are explicitly NOT scheduled for live runs.
   with a delay and was explicitly accepted by the owner.
 - EKS live runs are NOT planned (cost decision by the owner); the code and
   scenarios stay in the repository as reference. Do not schedule EKS applies.
-- Local-wsl live E2E still blocked on this host only by WSL systemd being
-  disabled (PID 1 is init(Ubuntu)); the owner can run it per docs/e2e.md.
+- Local-wsl application E2E completed 2026-09-17: owner reran deploy successfully,
+  node Ready, pod 1/1 Running, page/CSS/JS/all nine audio files returned HTTP 200.
+  Owner confirmed Windows browser access via WSL IP; Windows localhost forwarding
+  was unavailable and IP access was accepted (no network changes needed).
+  Destroy removed app namespace/deployment/service and Terraform marker; empty
+  state and unavailable port 30080 verified. k3s, /opt/ai-nginx and the dedicated
+  kubeconfig remain by design; full host cleanup needs the owner's sudo password.
+  Initial registration race was fixed with bounded polling before readiness.
+  Final make test passed (13 tests plus static validation); standalone actionlint
+  was unavailable in this session. No AWS operations were performed.
+- Both EKS scenarios use the common AI_Nginx image built with the upstream
+  Dockerfile. No separate S3 Dockerfile/image; only eks-ec2-s3 creates the audio
+  bucket and uploads AI_Nginx html/audio/ through its playbook.
+- Keep run history, failures and acceptance status in agent context files only;
+  user guides describe operation, prerequisites and safety, not internal progress.
 
 ## Architecture and changes
 
@@ -40,9 +55,9 @@ Existing user changes (role naming/docs and Fargate namespace selector) retained
 
 ## Remaining live acceptance / limitations
 
-1. Live E2E of `local-wsl`: enable systemd in WSL2 and restart WSL from Windows,
-   then follow docs/e2e.md (deploy, readiness/HTTP checks, destroy). Uninstall
-   k3s only on a dedicated test host.
+1. Application E2E is complete for EC2 and local-wsl. Optional full local host
+   cleanup: owner uninstalls k3s on this dedicated test host and removes the
+   checkout and project kubeconfig. Do not confuse retained tooling with app resources.
 2. EKS live runs are explicitly NOT planned (owner cost decision). The EKS and
    eks-ec2-s3 scenarios remain in the repo as reference code only. If they are
    ever revived, re-check region/version availability and extended-support
