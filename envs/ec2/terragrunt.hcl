@@ -7,15 +7,15 @@ terraform {
 }
 
 inputs = {
-  project_name      = "aws-template"
-  environment       = "dev"
-  aws_region        = get_env("AWS_DEFAULT_REGION", "eu-central-1")
-  instance_type     = "t3.micro"
-  public_key_path   = "~/.ssh/id_rsa.pub"
-  ssh_cidr_blocks   = []
-  http_cidr_blocks  = ["0.0.0.0/0"]
-  https_cidr_blocks = ["0.0.0.0/0"]
-  spot              = true
-  budget_email      = get_env("BUDGET_EMAIL", "")
+  project_name       = "aws-template"
+  environment        = "dev"
+  aws_region         = get_env("AWS_DEFAULT_REGION", "eu-central-1")
+  instance_type      = "t3.micro"
+  public_key_path    = get_env("TF_VAR_public_key_path", "~/.ssh/id_rsa.pub")
+  ssh_cidr_blocks    = jsondecode(get_env("TF_VAR_ssh_cidr_blocks", "[]"))
+  http_cidr_blocks   = ["0.0.0.0/0"]
+  https_cidr_blocks  = ["0.0.0.0/0"]
+  spot               = true
+  budget_email       = get_env("BUDGET_EMAIL", "")
   monthly_budget_usd = 5
 }

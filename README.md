@@ -19,12 +19,36 @@ installed and configured, the AI_Nginx content served and a smoke test passed.
 ├── root.hcl                  Shared settings + generated provider.tf
 ├── envs/                     One Terragrunt unit per scenario
 ├── src/                      Self-contained Terraform roots
-├── ansible/                  Playbooks and roles (nginx, deploy-site, eks)
-├── kubernetes/base/          Manifests for the demo workload
+├── ansible/                  Playbooks and roles (nginx, deploy_site, eks)
+├── kubernetes/               Manifests (base/ for EKS, local/ for k3s)
 ├── scripts/                  deploy.sh, destroy.sh, WSL helpers
 ├── docs/                     Full documentation
 └── .github/workflows/        validate.yml (CI) + deploy.yml (manual)
 ```
+
+## Проверенный статус и безопасность затрат (2026-09-17)
+
+- Бесплатные проверки: `make test`, Terraform/Terragrunt validate для всех четырёх сценариев,
+  `local-wsl init → validate → plan`, HCL formatting и actionlint прошли.
+- **AWS apply не выполнялся.** Работа не создала AWS-ресурсов. Проверить ранее
+  созданные ресурсы и баланс аккаунта без AWS-доступа невозможно.
+- Живой local-wsl E2E заблокирован: текущий WSL запущен без systemd; sudo требует пароль.
+  Скрипт останавливается до создания ресурсов. Это не подтверждённый production-релиз.
+- По умолчанию скрипты и Makefile выбирают `local-wsl`. Для облачного `make apply`
+  требуется `CONFIRM_COSTS=yes`; бюджетное уведомление **не ограничивает расходы**.
+- Локальный state хранится в `envs/<scenario>/terraform.tfstate`, вне кэша.
+  **Если вы уже делали apply старой версией, сначала сохраните state из старого кэша
+  и выполните `terragrunt init -migrate-state` в той же среде. Не очищайте кэш до миграции.**
+- GitHub Deploy управляет **только инфраструктурой**, не приложением. Для него обязательны
+  существующий S3 backend и DynamoDB lock table: repository variables `TF_STATE_BUCKET`,
+  `TF_STATE_REGION`, `TF_LOCK_TABLE`. Шаблон их не создаёт. Backend сам может иметь стоимость.
+- `local-wsl` запускается на вашем WSL2, не на временном GitHub runner.
+  Kubeconfig: `~/.kube/aws-template-k3s.yaml`. Существующий kubeconfig не перезаписывается.
+- EKS использует заранее опубликованный доступный GHCR-образ с приложением и curl.
+  Копирования файлов в живые поды больше нет. S3/CloudFront создаются, но загрузка аудио
+  и привязка URL к приложению пока не автоматизированы.
+
+Подробности очистки и границ проверки: [docs/completion.md](docs/completion.md).
 
 ## Quick start
 
@@ -76,7 +100,7 @@ make precommit                     # запустить pre-commit хуки
 ```
 
 Поддерживаемые значения `ENV`: `ec2`, `eks-fargate`, `eks-ec2-s3`, `local-wsl`.
-По умолчанию: `ec2`.
+По умолчанию: `local-wsl`.
 
 ## Cloud credentials
 

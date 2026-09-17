@@ -27,8 +27,8 @@ Configure them once with `pre-commit install`.
 
 ## Constraints
 
-- Terraform `>= 1.9.0` because the sources use `data` blocks and the AWS
-  provider `~> 6.0` is required for `aws_budgets_budget`.
+- Terraform `>= 1.9.0`; locally tested 1.9.8. AWS provider 6.x for EC2,
+  5.x for EKS module 20.x; local-wsl does not require an AWS provider.
 - Terragrunt `>= 0.68.0` because the env units use `terraform.source` with
   `inputs`.
 - Never reference sibling directories from a `src/` root: Terragrunt copies

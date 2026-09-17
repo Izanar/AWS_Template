@@ -20,6 +20,11 @@ Thumbs.db
 # Lock files generated inside Terragrunt env directories (kept in src/* instead)
 envs/*/.terraform.lock.hcl
 
+# State/plan backups must never be committed.
+*.tfstate.*
+*.tfplan
+.state/
+
 # Terragrunt
 .terragrunt-cache/
 

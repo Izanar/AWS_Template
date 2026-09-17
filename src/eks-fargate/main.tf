@@ -38,10 +38,14 @@ module "eks" {
   enable_cluster_creator_admin_permissions = true
 
   fargate_profiles = {
-    weather_demo = {
-      name = "weather-demo"
+    coredns = {
+      selectors  = [{ namespace = "kube-system", labels = { "k8s-app" = "kube-dns" } }]
+      subnet_ids = module.vpc.private_subnets
+    }
+    ai_nginx_demo = {
+      name = "ai-nginx-demo"
       selectors = [{
-        namespace = "weather-demo"
+        namespace = "ai-nginx-demo"
       }]
       subnet_ids = module.vpc.private_subnets
     }

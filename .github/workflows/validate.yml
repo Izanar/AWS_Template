@@ -30,13 +30,13 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.16.2"
+          terraform_version: "1.9.8"
 
       - name: Set up Terragrunt
         run: |
           mkdir -p "$HOME/.local/bin"
           curl -fsSL \
-            https://github.com/gruntwork-io/terragrunt/releases/download/v1.1.4/terragrunt_linux_amd64 \
+            https://github.com/gruntwork-io/terragrunt/releases/download/v0.68.2/terragrunt_linux_amd64 \
             -o "$HOME/.local/bin/terragrunt"
           chmod +x "$HOME/.local/bin/terragrunt"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
@@ -61,6 +61,9 @@ jobs:
 
       - name: YAML and Kubernetes manifest lint
         run: yamllint kubernetes/ .github/workflows/ docs/
+
+      - name: Free regression tests
+        run: python -m unittest discover -s tests -v
 
       - name: Shell scripts lint
         run: shellcheck scripts/*.sh

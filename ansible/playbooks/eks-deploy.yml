@@ -5,9 +5,9 @@
   gather_facts: false
   vars:
     kubernetes_manifests:
-      - "{{ playbook_dir }}/../kubernetes/base/namespace.yaml"
-      - "{{ playbook_dir }}/../kubernetes/base/deployment.yaml"
-      - "{{ playbook_dir }}/../kubernetes/base/service.yaml"
+      - "{{ playbook_dir }}/../../kubernetes/base/namespace.yaml"
+      - "{{ playbook_dir }}/../../kubernetes/base/deployment.yaml"
+      - "{{ playbook_dir }}/../../kubernetes/base/service.yaml"
     app_repo_url: "https://github.com/Izanar/AI_Nginx.git"
     app_cache_dir: /tmp/ai-nginx
     image_repository: "ghcr.io/izanar/aws-template-kubernetes"

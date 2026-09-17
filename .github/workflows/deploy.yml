@@ -12,7 +12,6 @@ on:
           - ec2
           - eks-fargate
           - eks-ec2-s3
-          - local-wsl
       action:
         description: 'Terragrunt action to run'
         required: true
@@ -21,6 +20,10 @@ on:
         options:
           - apply
           - destroy
+      confirm_costs:
+        description: 'I accept AWS charges (required for apply; budgets are not a spending cap)'
+        type: boolean
+        default: false
       region:
         description: 'AWS region'
         required: true
@@ -31,6 +34,13 @@ on:
 
 jobs:
   deploy:
+    concurrency:
+      group: deploy-${{ inputs.scenario }}-${{ inputs.region }}
+      cancel-in-progress: false
+    env:
+      TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+      TF_STATE_REGION: ${{ vars.TF_STATE_REGION }}
+      TF_LOCK_TABLE: ${{ vars.TF_LOCK_TABLE }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -39,6 +49,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Require persistent state before obtaining AWS credentials
+        env:
+          ACTION: ${{ inputs.action }}
+          CONFIRM_COSTS: ${{ inputs.confirm_costs }}
+        run: |
+          if [ "$ACTION" = apply ] && [ "$CONFIRM_COSTS" != true ]; then
+            echo 'Explicit confirmation of AWS costs is required'; exit 1
+          fi
+          test -n "$TF_STATE_BUCKET" || { echo 'Set TF_STATE_BUCKET to an existing versioned S3 bucket'; exit 1; }
+          test -n "$TF_STATE_REGION" || { echo 'Set TF_STATE_REGION'; exit 1; }
+          test -n "$TF_LOCK_TABLE" || { echo 'Set TF_LOCK_TABLE to an existing DynamoDB lock table'; exit 1; }
 
       - name: Configure AWS credentials with OIDC
         if: inputs.scenario != 'local-wsl'
@@ -50,16 +72,26 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.16.2"
+          terraform_version: "1.9.8"
 
       - name: Set up Terragrunt
         run: |
           mkdir -p "$HOME/.local/bin"
           curl -fsSL \
-            https://github.com/gruntwork-io/terragrunt/releases/download/v1.1.4/terragrunt_linux_amd64 \
+            https://github.com/gruntwork-io/terragrunt/releases/download/v0.68.2/terragrunt_linux_amd64 \
             -o "$HOME/.local/bin/terragrunt"
           chmod +x "$HOME/.local/bin/terragrunt"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Prepare EC2 public key
+        if: inputs.scenario == 'ec2'
+        env:
+          SSH_PUBLIC_KEY: ${{ secrets.AWS_SSH_PUBLIC_KEY }}
+        run: |
+          test -n "$SSH_PUBLIC_KEY" || { echo 'AWS_SSH_PUBLIC_KEY is required'; exit 1; }
+          key="$RUNNER_TEMP/aws-template.pub"
+          printf '%s\n' "$SSH_PUBLIC_KEY" > "$key"
+          echo "TF_VAR_public_key_path=$key" >> "$GITHUB_ENV"
 
       - name: Terragrunt apply
         if: inputs.action == 'apply'

@@ -1,5 +1,14 @@
 # Карта проекта AWS_Template
 
+## Обновление 2026-09-17
+
+Добавлены `tests/test_template.py`, `docs/completion.md` и
+`docs/completion-context.md`. По умолчанию выбирается local-wsl; root.hcl
+сохраняет state вне кэша и поддерживает существующий S3 backend. GitHub Deploy
+управляет только облачной инфраструктурой. CI включает бесплатные unittest.
+Старое дерево ниже не показывает `.github/workflows/` и новые файлы полностью.
+
+
 ## Описание
 Шаблон инфраструктуры AWS, включающий Terraform, Terragrunt, Ansible и Kubernetes-манифесты для развёртывания EC2, EKS (EC2/S3, Fargate) и локального WSL-окружения.
 

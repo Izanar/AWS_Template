@@ -1,5 +1,19 @@
 # AWS_Template Project Context
 
+## Актуальный статус — 2026-09-17
+
+**Этот раздел заменяет исторические утверждения о версиях и готовности ниже.**
+Проверенный отчёт: [docs/completion-context.md](docs/completion-context.md).
+Terraform 1.9.8 / Terragrunt 0.68.2; EC2 provider 6.x, EKS provider 5.x;
+локальный сценарий без AWS provider. Статические проверки и 5 регрессионных тестов
+проходят. Полный E2E не завершён: WSL без systemd; AWS не запускался ради нулевых
+новых расходов. GitHub Deploy теперь только инфраструктурный, требует существующий
+S3 backend и DynamoDB lock table. Состояние вне кэша. Оставшиеся ограничения и
+очистка: [docs/completion.md](docs/completion.md).
+
+## Исторический контекст (не отчёт о текущих проверках)
+
+
 ## Summary
 
 The repository was transformed into a reusable Terraform/Ansible/Kubernetes
@@ -28,11 +42,12 @@ Each root is cache-safe: no relative sibling paths, only registry modules from
   - `envs/local-wsl/terragrunt.hcl`
 
 ### Ansible Roles and Playbooks
-- Roles: `nginx`, `deploy-site`, `eks`
+- Roles: `nginx`, `deploy_site`, `eks`
 - Playbooks: `ansible/playbooks/ec2.yml`, `ansible/playbooks/eks-deploy.yml`
 
 ### Kubernetes Manifests
 - Base manifests in `kubernetes/base/`: `namespace.yaml`, `deployment.yaml`, `service.yaml`
+- Local manifests in `kubernetes/local/`: `namespace.yaml`, `deployment.yaml`, `service.yaml`
 
 ### GitHub Actions
 - `validate.yml` - CI on push/PR (terraform fmt/validate, ansible, yamllint, shellcheck)
@@ -59,12 +74,13 @@ Each root is cache-safe: no relative sibling paths, only registry modules from
 
 ## What Remains to Be Done
 
-- [ ] Run `terragrunt apply` against a real AWS account for `ec2`,
-      `eks-fargate` and `eks-ec2-s3` (requires AWS credentials/OIDC role)
+- [ ] Run `terragrunt apply` against a real AWS account for `ec2`
+      (and optional EKS scenarios; requires AWS credentials/OIDC role)
 - [ ] Deploy the demo workload to a real cluster (EKS or local k3s) and observe
       the readiness probes
-- [ ] If the previous `modules/` layout is still referenced anywhere (docs,
-      branches), update or remove those references
+- [x] If the previous `modules/` layout is still referenced anywhere (docs,
+      branches), update or remove those references (verified: only historical references in architecture doc)
+- [x] Fix Fargate profile selector in `src/eks-fargate/main.tf` (`weather-demo` -> `ai-nginx-demo`)
 - [ ] Consider adding automated infrastructure tests (Terratest / InSpec /
       k8s conformance) once the apply path is verified
 

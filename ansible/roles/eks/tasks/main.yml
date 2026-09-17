@@ -16,29 +16,16 @@
     {{ deployment_name }}={{ image_repository }}:{{ image_tag }}
   changed_when: true
 
-- name: Wait for the application pod
+- name: Wait for the application rollout
   ansible.builtin.command: >-
-    kubectl wait --namespace {{ k8s_namespace }} --for=condition=ready pod
-    -l app={{ app_label }} --timeout=180s
+    kubectl rollout status deployment/{{ deployment_name }}
+    -n {{ k8s_namespace }} --timeout=300s
   changed_when: false
 
-- name: Find application pods
+- name: Smoke test nginx inside the deployment
   ansible.builtin.command: >-
-    kubectl get pods -n {{ k8s_namespace }} -l app={{ app_label }}
-    -o jsonpath={range .items[*]}{.metadata.name}{"\n"}{end}
-  register: eks_application_pods
+    kubectl exec -n {{ k8s_namespace }} deployment/{{ deployment_name }}
+    -- curl --fail --silent --show-error http://127.0.0.1/
+  register: eks_smoke
   changed_when: false
-
-- name: Copy AI_Nginx files into every application pod
-  ansible.builtin.shell: |
-    while IFS= read -r pod; do
-      kubectl cp "{{ app_cache_dir }}/html/." "{{ k8s_namespace }}/${pod}:/usr/share/nginx/html/"
-    done <<< "{{ eks_application_pods.stdout }}"
-  args:
-    executable: /bin/bash
-  changed_when: true
-
-- name: Remove local application checkout
-  ansible.builtin.file:
-    path: "{{ app_cache_dir }}"
-    state: absent
+  failed_when: eks_smoke.rc != 0 or 'html' not in (eks_smoke.stdout | lower)

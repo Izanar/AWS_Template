@@ -1,5 +1,12 @@
 # Usage
 
+> Current cost-safe runbook and limitations: [completion.md](completion.md).
+> Default scenario is now local-wsl; kubeconfig is `~/.kube/aws-template-k3s.yaml`.
+> GitHub Deploy provisions infrastructure only and requires an existing S3 backend.
+> EKS additionally requires Ansible and a published accessible application image.
+> AWS Budget is an alert, not a spending cap. S3 audio upload is not automated.
+
+
 ## Quick start
 
 ```bash
@@ -53,7 +60,7 @@ aws sts get-caller-identity          # verify AWS credentials
 ansible-playbook -i /tmp/aws-template-inventory.ini ansible/nginx.yml
 
 # Inspect the deployed demo
-curl "$(./scripts/deploy.sh ec2 --help >/dev/null; terragrunt --working-dir envs/ec2 output -raw nginx_url)"
+curl "$(cd envs/ec2 && terragrunt output -raw nginx_url)"
 
 ./scripts/destroy.sh ec2         # destroys the instance and all wiring
 ```

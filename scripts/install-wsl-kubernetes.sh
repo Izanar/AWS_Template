@@ -1,35 +1,24 @@
 #!/usr/bin/env bash
-# Install k3s (Kubernetes on lightweight containers) for WSL2.
-# Usage: install-wsl-kubernetes.sh [k3s-version]
+# Install k3s on a systemd-enabled WSL2 host; never overwrite the user's kubeconfig.
 set -euo pipefail
-
 K3S_VERSION="${1:-v1.31.1+k3s1}"
-
+[[ "$(ps -p 1 -o comm=)" == systemd ]] || { echo 'Enable systemd in WSL2 first' >&2; exit 1; }
+sudo -v
 if command -v k3s >/dev/null 2>&1; then
-  INSTALLED_VERSION="$(k3s version --short 2>/dev/null || true)"
-  echo "k3s is already installed: ${INSTALLED_VERSION}"
-  echo "Requested version: ${K3S_VERSION}"
-  echo "Re-run with a different version to upgrade, or uninstall the current one first."
-  exit 0
+  installed="$(k3s --version | head -1)"
+  [[ "$installed" == *" ${K3S_VERSION} "* ]] || {
+    echo "Existing k3s version differs: $installed. Upgrade explicitly before deploying." >&2
+    exit 1
+  }
+else
+  installer="$(mktemp)"
+  trap 'rm -f "$installer"' EXIT
+  curl -fsSL https://get.k3s.io -o "$installer"
+  sudo env INSTALL_K3S_VERSION="$K3S_VERSION" sh "$installer"
 fi
-
-echo "Installing k3s ${K3S_VERSION} ..."
-curl -fsSL https://get.k3s.io | K3S_VERSION="${K3S_VERSION}" sh
-
-echo "k3s installed. Run 'k3s kubectl get-nodes' to verify the cluster."
-echo "Note: on WSL2 the k3s server needs to be run inside a systemd session (systemctl start k3s)."
-# Автоматическая настройка KUBECONFIG для текущего пользователя
-USER_HOME=$(eval echo "~${SUDO_USER:-$USER}")
-USER_NAME=${SUDO_USER:-$USER}
-
-echo "==> Configuring KUBECONFIG for user: ${USER_NAME}"
-mkdir -p "${USER_HOME}/.kube"
-sudo cp /etc/rancher/k3s/k3s.yaml "${USER_HOME}/.kube/config"
-sudo chown -R "${USER_NAME}:" "${USER_HOME}/.kube"
-chmod 600 "${USER_HOME}/.kube/config"
-
-# Добавляем переменную в .bashrc, если её там ещё нет
-if ! grep -q "KUBECONFIG" "${USER_HOME}/.bashrc"; then
-    echo 'export KUBECONFIG=~/.kube/config' >> "${USER_HOME}/.bashrc"
-    echo "==> KUBECONFIG added to ${USER_HOME}/.bashrc"
-fi
+sudo systemctl start k3s
+mkdir -p "$HOME/.kube"
+sudo install -m 600 -o "$(id -u)" -g "$(id -g)" /etc/rancher/k3s/k3s.yaml "$HOME/.kube/aws-template-k3s.yaml"
+export KUBECONFIG="$HOME/.kube/aws-template-k3s.yaml"
+kubectl wait --for=condition=Ready node --all --timeout=180s
+printf 'Use: export KUBECONFIG=%s/.kube/aws-template-k3s.yaml\n' "$HOME"
