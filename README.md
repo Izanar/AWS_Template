@@ -101,6 +101,7 @@ local AWS profile and SSH key pair. Set `BUDGET_EMAIL` to enable budget alerts.
 - [docs/architecture.md](docs/architecture.md) - layout and data flow
 - [docs/usage.md](docs/usage.md) - local control and CI/CD
 - [docs/development.md](docs/development.md) - validation and contribution
+- [docs/e2e.md](docs/e2e.md) - what a live end-to-end run is and how to run it
 - [docs/completion.md](docs/completion.md) - cost control, state management and cleanup runbook
 
 > This template creates real, billable resources in AWS. Use the manual

@@ -74,21 +74,29 @@ Each root is cache-safe: no relative sibling paths, only registry modules from
 
 ## What Remains to Be Done
 
-- [ ] Run `terragrunt apply` against a real AWS account for `ec2`
-      (and optional EKS scenarios; requires AWS credentials/OIDC role)
-- [ ] Deploy the demo workload to a real cluster (EKS or local k3s) and observe
-      the readiness probes
+- [x] Run `terragrunt apply` against a real AWS account for `ec2` (2026-09-17:
+      Spot t3.micro, Ansible deploy, HTTP smoke test, destroy; cleanup verified
+      through AWS API - instance/volume/SG/keypair/Spot request all gone, state empty)
+- [x] Deploy the demo workload on the `ec2` scenario and observe the smoke test
+      (live). The local k3s path still needs a live E2E run (see docs/e2e.md).
 - [x] If the previous `modules/` layout is still referenced anywhere (docs,
       branches), update or remove those references (verified: only historical references in architecture doc)
 - [x] Fix Fargate profile selector in `src/eks-fargate/main.tf` (`weather-demo` -> `ai-nginx-demo`)
-- [ ] Consider adding automated infrastructure tests (Terratest / InSpec /
-      k8s conformance) once the apply path is verified
+- [x] Automated offline regression tests: 11 unittest checks (template, S3
+      delivery with a recorded fake AWS CLI, rendered manifests)
+- [ ] Live E2E for `local-wsl` on a systemd-enabled WSL2 host (docs/e2e.md)
+
+## Explicitly NOT planned (do not schedule for agents)
+
+- Live `terragrunt apply`/`destroy` for `eks-fargate` and `eks-ec2-s3`.
+  The code, README entries and scenarios stay as reference implementations,
+  but running them is deliberately out of scope (costly control plane/NAT).
+  Do not re-add them to plans, checklists or "next steps" lists.
+- Terratest / InSpec / k8s conformance suites (offline tests cover the gates).
 
 ## Next Steps for Continuation
 
-1. Export AWS credentials or configure `AWS_ROLE_ARN` OIDC in GitHub.
-2. Run `make validate` to confirm the tree is healthy.
-3. Run `./scripts/deploy.sh ec2` (or the manual `deploy.yml` action) and
-   verify the nginx page and the budget alert.
-4. Repeat for the EKS scenarios, then `./scripts/destroy.sh <scenario>`.
-5. Test `local-wsl` on an actual WSL2 host (k3s + port forwarding).
+1. Live E2E of `local-wsl` by the user on a systemd WSL2 host (docs/e2e.md).
+2. Check the Billing entry for the completed EC2 test once data settles.
+3. Optional later: real GitHub OIDC + S3 state backend for the Deploy workflow;
+   a first CI run without `[skip ci]` to turn the badge green.
