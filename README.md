@@ -1,5 +1,14 @@
 # AWS_Template
 
+[![Validate](https://github.com/Izanar/AWS_Template/actions/workflows/validate.yml/badge.svg)](https://github.com/Izanar/AWS_Template/actions/workflows/validate.yml)
+![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.9-7B42BC?logo=terraform&logoColor=white)
+![Terragrunt](https://img.shields.io/badge/Terragrunt-%3E%3D0.68-5C4EE5?logo=terraform&logoColor=white)
+![Ansible](https://img.shields.io/badge/Ansible-EE0000?logo=ansible&logoColor=white)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-k3s%20%2F%20EKS-326CE5?logo=kubernetes&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-EC2%20%2F%20EKS%20%2F%20S3-232F3E?logo=amazonwebservices&logoColor=white)
+![Platform](https://img.shields.io/badge/platform-WSL2%20%7C%20Linux-blue)
+![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)
+
 A hands-on infrastructure template that deploys the [AI_Nginx](https://github.com/Izanar/AI_Nginx)
 demo application (custom nginx site with the Kyiv Skyline static + audio page)
 through four different setups using **Terraform**, **Terragrunt**, **Ansible**
@@ -25,30 +34,6 @@ installed and configured, the AI_Nginx content served and a smoke test passed.
 ├── docs/                     Full documentation
 └── .github/workflows/        validate.yml (CI) + deploy.yml (manual)
 ```
-
-## Проверенный статус и безопасность затрат (2026-09-17)
-
-- Бесплатные проверки: `make test`, Terraform/Terragrunt validate для всех четырёх сценариев,
-  `local-wsl init → validate → plan`, HCL formatting и actionlint прошли.
-- **AWS apply не выполнялся.** Работа не создала AWS-ресурсов. Проверить ранее
-  созданные ресурсы и баланс аккаунта без AWS-доступа невозможно.
-- Живой local-wsl E2E заблокирован: текущий WSL запущен без systemd; sudo требует пароль.
-  Скрипт останавливается до создания ресурсов. Это не подтверждённый production-релиз.
-- По умолчанию скрипты и Makefile выбирают `local-wsl`. Для облачного `make apply`
-  требуется `CONFIRM_COSTS=yes`; бюджетное уведомление **не ограничивает расходы**.
-- Локальный state хранится в `envs/<scenario>/terraform.tfstate`, вне кэша.
-  **Если вы уже делали apply старой версией, сначала сохраните state из старого кэша
-  и выполните `terragrunt init -migrate-state` в той же среде. Не очищайте кэш до миграции.**
-- GitHub Deploy управляет **только инфраструктурой**, не приложением. Для него обязательны
-  существующий S3 backend и DynamoDB lock table: repository variables `TF_STATE_BUCKET`,
-  `TF_STATE_REGION`, `TF_LOCK_TABLE`. Шаблон их не создаёт. Backend сам может иметь стоимость.
-- `local-wsl` запускается на вашем WSL2, не на временном GitHub runner.
-  Kubeconfig: `~/.kube/aws-template-k3s.yaml`. Существующий kubeconfig не перезаписывается.
-- EKS использует заранее опубликованный доступный GHCR-образ с приложением и curl.
-  Копирования файлов в живые поды больше нет. S3/CloudFront создаются, но загрузка аудио
-  и привязка URL к приложению пока не автоматизированы.
-
-Подробности очистки и границ проверки: [docs/completion.md](docs/completion.md).
 
 ## Quick start
 
@@ -104,10 +89,11 @@ make precommit                     # запустить pre-commit хуки
 
 ## Cloud credentials
 
-The manual **Deploy** workflow uses GitHub OIDC through the `AWS_ROLE_ARN`
-secret. The EC2 Ansible step additionally needs `AWS_SSH_PRIVATE_KEY` and
-`AWS_SSH_PUBLIC_KEY` secrets. Set `BUDGET_EMAIL` (locally or as a secret) to
-enable the optional monthly AWS budget alert.
+The manual **Deploy** workflow provisions infrastructure using GitHub OIDC
+(`AWS_ROLE_ARN`) and an existing state backend configured through `TF_STATE_BUCKET`,
+`TF_STATE_REGION` and `TF_LOCK_TABLE` repository variables. EC2 also requires
+`AWS_SSH_PUBLIC_KEY`. Application deployment through the local scripts uses your
+local AWS profile and SSH key pair. Set `BUDGET_EMAIL` to enable budget alerts.
 
 ## Documentation
 
@@ -115,6 +101,7 @@ enable the optional monthly AWS budget alert.
 - [docs/architecture.md](docs/architecture.md) - layout and data flow
 - [docs/usage.md](docs/usage.md) - local control and CI/CD
 - [docs/development.md](docs/development.md) - validation and contribution
+- [docs/completion.md](docs/completion.md) - cost control, state management and cleanup runbook
 
 > This template creates real, billable resources in AWS. Use the manual
 > `destroy` action or `./scripts/destroy.sh` after testing.
