@@ -95,7 +95,6 @@ AWS_Template/
 
 ```
 scripts/
-├── configure-wsl-network.sh      # Настройка сети WSL
 ├── deploy.sh                     # Скрипт развёртывания
 ├── destroy.sh                    # Скрипт удаления ресурсов
 └── install-wsl-kubernetes.sh     # Установка Kubernetes в WSL

@@ -56,7 +56,7 @@ Each root is cache-safe: no relative sibling paths, only registry modules from
 
 ### Scripts
 - `scripts/deploy.sh`, `scripts/destroy.sh` - scenario-aware lifecycle control
-- `scripts/install-wsl-kubernetes.sh`, `scripts/configure-wsl-network.sh` - WSL helpers
+- `scripts/install-wsl-kubernetes.sh` - WSL k3s installer
 
 ### Tooling
 - Makefile with validate/fmt/init/plan/apply/destroy/output/lint/test targets

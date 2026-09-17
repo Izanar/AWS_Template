@@ -157,11 +157,9 @@ k3s kubectl get nodes
 
 **Шаг 2: Настройка сетевого доступа (один раз)**
 
-```bash
-./scripts/configure-wsl-network.sh
-```
-
-Эта команда выведет инструкции по настройке сети для доступа к приложению с Windows-хоста. Скопируйте и выполните команды из вывода в PowerShell (на Windows).
+Сетевой доступ настраивается вручную при необходимости; Terraform не изменяет сеть Windows.
+После запуска приложения сначала проверьте `http://localhost:30080` с Windows.
+Если localhost forwarding недоступен, используйте инструкции ниже.
 
 Суть настройки:
 1. Найти IP-адрес WSL2: `ip -4 addr show eth0 | grep inet`
@@ -258,7 +256,6 @@ curl http://localhost:30080
 # === ПОДГОТОВКА (один раз) ===
 make install-tools                          # установка инструментов
 ./scripts/install-wsl-kubernetes.sh         # установка k3s
-./scripts/configure-wsl-network.sh          # настройка сети (выполнить команды в PowerShell)
 
 # === ЗАПУСК ===
 ./scripts/deploy.sh local-wsl              # деплой приложения

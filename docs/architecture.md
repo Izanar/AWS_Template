@@ -13,7 +13,7 @@ AWS_Template is split into four layers:
     │   ├── ec2/          EC2 + budget
     │   ├── eks-fargate/  VPC + EKS + budget
     │   ├── eks-ec2-s3/   VPC + EKS + S3 + CloudFront + budget
-    │   └── local-wsl/    k3s install + network instructions
+    │   └── local-wsl/    k3s install
     ├── ansible/              Playbooks and roles
     ├── kubernetes/base/      Manifests for the demo workload
     ├── scripts/              Helper scripts
