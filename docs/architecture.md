@@ -12,7 +12,7 @@ AWS_Template is split into four layers:
     ├── src/                  Self-contained Terraform roots (sources)
     │   ├── ec2/          EC2 + budget
     │   ├── eks-fargate/  VPC + EKS + budget
-    │   ├── eks-ec2-s3/   VPC + EKS + S3 + CloudFront + budget
+│   ├── eks-ec2-s3/   VPC + EKS + S3 + CloudFront + budget (audio from S3)
     │   └── local-wsl/    k3s install
     ├── ansible/              Playbooks and roles
     ├── kubernetes/base/      Manifests for the demo workload

@@ -35,6 +35,9 @@ if [[ "$SCENARIO" != local-wsl ]]; then
     command -v "$tool" >/dev/null || { echo "$tool is required" >&2; exit 1; }
   done
   if [[ "$SCENARIO" == eks-* ]]; then
+    if [[ "$SCENARIO" == eks-ec2-s3 ]]; then
+      command -v git >/dev/null || { echo 'git is required for audio upload' >&2; exit 1; }
+    fi
     command -v kubectl >/dev/null || { echo 'kubectl is required' >&2; exit 1; }
   fi
 else
@@ -99,7 +102,14 @@ INV
   eks-fargate|eks-ec2-s3)
   cluster_name="$(tg output -raw cluster_name)"
   aws eks update-kubeconfig --name "$cluster_name" --region "$aws_region"
-  ANSIBLE_ROLES_PATH="ansible/roles" ansible-playbook ansible/playbooks/eks-deploy.yml
+  if [[ "$SCENARIO" == eks-ec2-s3 ]]; then
+    export AUDIO_BUCKET_NAME CLOUDFRONT_DOMAIN
+    AUDIO_BUCKET_NAME="$(tg output -raw audio_bucket_name)"
+    CLOUDFRONT_DOMAIN="$(tg output -raw cloudfront_domain)"
+    ANSIBLE_ROLES_PATH="ansible/roles" ansible-playbook ansible/playbooks/eks-s3-deploy.yml
+  else
+    ANSIBLE_ROLES_PATH="ansible/roles" ansible-playbook ansible/playbooks/eks-deploy.yml
+  fi
   echo ">>> Deployed. Use kubectl port-forward -n ai-nginx-demo svc/ai-nginx-app 8080:80 for local access."
   ;;
 

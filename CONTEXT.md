@@ -52,7 +52,7 @@ Each root is cache-safe: no relative sibling paths, only registry modules from
 ### GitHub Actions
 - `validate.yml` - CI on push/PR (terraform fmt/validate, ansible, yamllint, shellcheck)
 - `deploy.yml` - manual apply/destroy per scenario with AWS OIDC
-- `build-images.yml` - manual image builds for the feature branches
+- `build-images.yml` - manual image builds from the AI_Nginx repository
 
 ### Scripts
 - `scripts/deploy.sh`, `scripts/destroy.sh` - scenario-aware lifecycle control

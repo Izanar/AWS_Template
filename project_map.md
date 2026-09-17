@@ -9,6 +9,27 @@
 Старое дерево ниже не показывает `.github/workflows/` и новые файлы полностью.
 
 
+## Project structure
+
+```
+AWS_Template/
+├── .github/workflows/          # CI (validate), manual deploy, image builds
+├── ansible/
+│   ├── playbooks/              # ec2.yml, eks-deploy.yml, eks-s3-deploy.yml
+│   └── roles/                  # deploy_site, eks, eks_s3, nginx
+├── docker/
+│   └── s3.Dockerfile           # App image without audio (CloudFront serves audio)
+├── docs/                       # architecture, usage, development, completion
+├── envs/                       # Terragrunt units: ec2, eks-ec2-s3, eks-fargate, local-wsl
+├── kubernetes/
+│   ├── base/                   # Manifests for EKS scenarios
+│   └── local/                  # Manifests for local k3s
+├── root.hcl                    # Shared Terragrunt config (state, provider)
+├── scripts/                    # deploy/destroy, audio sync, WSL k3s installer
+├── src/                        # Self-contained Terraform roots
+└── tests/                      # Offline unittest regressions
+```
+
 ## Описание
 Шаблон инфраструктуры AWS, включающий Terraform, Terragrunt, Ansible и Kubernetes-манифесты для развёртывания EC2, EKS (EC2/S3, Fargate) и локального WSL-окружения.
 
@@ -97,7 +118,8 @@ AWS_Template/
 scripts/
 ├── deploy.sh                     # Скрипт развёртывания
 ├── destroy.sh                    # Скрипт удаления ресурсов
-└── install-wsl-kubernetes.sh     # Установка Kubernetes в WSL
+├── install-wsl-kubernetes.sh     # Установка Kubernetes в WSL
+└── sync-audio-to-s3.sh           # Загрузка аудио в приватный S3 (eks-ec2-s3)
 ```
 
 ---
@@ -130,7 +152,8 @@ scripts/
 | Роль            | Описание                                      |
 |-----------------|-----------------------------------------------|
 | deploy_site     | Развёртывание веб-сайта                       |
-| eks             | Настройка EKS-кластера                        |
+| eks             | Развёртывание приложения в EKS через kubectl  |
+| eks_s3          | EKS-сценарий с аудио из приватного S3         |
 | nginx           | Установка и настройка Nginx (с хендлерами)   |
 
 ---

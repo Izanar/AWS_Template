@@ -23,18 +23,37 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Checkout infrastructure template
+        uses: actions/checkout@v4
+        with:
+          path: template
+
       - name: Checkout the AI_Nginx application
         uses: actions/checkout@v4
         with:
           repository: Izanar/AI_Nginx
           ref: ${{ inputs.ref }}
+          path: app
+
+      - name: Identify application source
+        id: source
+        run: echo "sha=$(git -C app rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Build and push the AI_Nginx image
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: app
           push: true
           tags: |
             ghcr.io/izanar/aws-template-kubernetes:latest
-            ghcr.io/izanar/aws-template-kubernetes:${{ github.sha }}
+            ghcr.io/izanar/aws-template-kubernetes:${{ steps.source.outputs.sha }}
+
+      - name: Build and push the S3 application image (without audio)
+        uses: docker/build-push-action@v6
+        with:
+          context: app
+          file: template/docker/s3.Dockerfile
+          push: true
+          tags: |
             ghcr.io/izanar/aws-template-s3:latest
+            ghcr.io/izanar/aws-template-s3:${{ steps.source.outputs.sha }}

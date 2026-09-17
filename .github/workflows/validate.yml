@@ -57,6 +57,7 @@ jobs:
         run: |
           ansible-playbook --syntax-check -i localhost, ansible/playbooks/ec2.yml
           ansible-playbook --syntax-check ansible/playbooks/eks-deploy.yml
+          ansible-playbook --syntax-check ansible/playbooks/eks-s3-deploy.yml
           ansible-lint ansible/
 
       - name: YAML and Kubernetes manifest lint

@@ -80,7 +80,7 @@ aws sts get-caller-identity
 # Connect kubectl to the new cluster (replace the printed values)
 aws eks update-kubeconfig --name "$(terragrunt --working-dir envs/eks-fargate output -raw cluster_name)" --region eu-central-1
 kubectl get nodes
-kubectl apply -k k8s/                 # deploy the demo workload
+kubectl apply -f kubernetes/base/          # deploy the demo workload
 
 ./scripts/destroy.sh eks-fargate # destroys the cluster (also 15-25 min)
 ```
@@ -94,19 +94,15 @@ kubectl apply -k k8s/                 # deploy the demo workload
 ```bash
 aws sts get-caller-identity
 
-./scripts/deploy.sh eks-ec2-s3   # EKS + S3 bucket + CloudFront with OAC
-#    -> same 15-25 minutes; S3 and CloudFront serve the static demo
-
-aws eks update-kubeconfig --name "$(terragrunt --working-dir envs/eks-ec2-s3 output -raw cluster_name)" --region eu-central-1
-kubectl get nodes
-
-# Check the CDN-served demo
-curl "$(terragrunt --working-dir envs/eks-ec2-s3 output -raw demo_url)"
+./scripts/deploy.sh eks-ec2-s3   # EKS + S3 + CloudFront with OAC
+#    -> same 15-25 minutes; audio is uploaded to the private bucket automatically
+#    -> the app image serves static files; /audio/* redirects to CloudFront
+#    -> the playbook verifies an audio file through nginx -> CloudFront
 
 ./scripts/destroy.sh eks-ec2-s3  # destroys the cluster, bucket and CDN
 ```
 
-**Outputs:** `cluster_name`, `bucket_name`, `demo_url`.
+**Outputs:** `cluster_name`, `cluster_endpoint`, `audio_bucket_name`, `cloudfront_domain`.
 
 ### 4. `local-wsl` — k3s on WSL2 (no cloud)
 

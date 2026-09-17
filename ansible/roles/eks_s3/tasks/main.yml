@@ -1,0 +1,81 @@
+---
+- name: Validate S3 delivery settings
+  ansible.builtin.assert:
+    that:
+      - audio_bucket_name is match('^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$')
+      - cloudfront_domain is match('^[a-z0-9-]+\.cloudfront\.net$')
+    fail_msg: Set AUDIO_BUCKET_NAME and CLOUDFRONT_DOMAIN from the eks-ec2-s3 Terraform outputs
+
+- name: Check deployment tools
+  ansible.builtin.command: "{{ item }}"
+  loop:
+    - aws --version
+    - git --version
+    - kubectl version --client
+  changed_when: false
+
+- name: Upload application audio to private S3
+  ansible.builtin.command:
+    argv:
+      - bash
+      - "{{ playbook_dir }}/../../scripts/sync-audio-to-s3.sh"
+      - "{{ app_repo_url }}"
+      - "{{ audio_bucket_name }}"
+  changed_when: true
+
+- name: Allocate temporary manifests directory
+  ansible.builtin.tempfile:
+    state: directory
+    prefix: aws-template-s3-
+  register: eks_s3_manifests
+
+- name: Deploy S3-aware application
+  block:
+    - name: Render S3 nginx config and deployment
+      ansible.builtin.template:
+        src: "{{ item }}.j2"
+        dest: "{{ eks_s3_manifests.path }}/{{ item }}"
+        mode: '0600'
+      loop:
+        - configmap.yaml
+        - deployment.yaml
+
+    - name: Deploy manifests and verify nginx
+      ansible.builtin.include_role:
+        name: "{{ playbook_dir }}/../roles/eks"
+      vars:
+        kubernetes_manifests:
+          - "{{ playbook_dir }}/../../kubernetes/base/namespace.yaml"
+          - "{{ eks_s3_manifests.path }}/configmap.yaml"
+          - "{{ eks_s3_manifests.path }}/deployment.yaml"
+          - "{{ playbook_dir }}/../../kubernetes/base/service.yaml"
+
+    - name: Verify audio through nginx redirect and CloudFront
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - exec
+          - -n
+          - "{{ k8s_namespace }}"
+          - "deployment/{{ deployment_name }}"
+          - --
+          - curl
+          - --fail
+          - --silent
+          - --show-error
+          - --location
+          - --max-time
+          - '30'
+          - --output
+          - /dev/null
+          - http://127.0.0.1/audio/rain.mp3
+      register: eks_s3_audio_check
+      changed_when: false
+      retries: 12
+      delay: 10
+      until: eks_s3_audio_check.rc == 0
+  always:
+    - name: Remove temporary manifests
+      ansible.builtin.file:
+        path: "{{ eks_s3_manifests.path }}"
+        state: absent

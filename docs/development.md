@@ -52,8 +52,9 @@ Configure them once with `pre-commit install`.
 
 ## Feature branches
 
-The Kubernetes docker image scenarios originally lived in
-`feature/eks-fargate-ha`, `feature/eks-ec2-s3` and
-`feature/local-kubernetes-wsl`. `main` is the consolidated template; the image
-build workflow (`build-images.yml`) can still publish containers from those
-branches to GHCR.
+The Kubernetes scenarios were consolidated into `main`; the old per-scenario
+branches were removed. Application images are built from the
+[Izanar/AI_Nginx](https://github.com/Izanar/AI_Nginx) repository itself via the
+manual `build-images.yml` workflow: `aws-template-kubernetes` (full content,
+used by `eks-fargate`) and `aws-template-s3` (static content only, audio served
+from private S3 through CloudFront, used by `eks-ec2-s3`).

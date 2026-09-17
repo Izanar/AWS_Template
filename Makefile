@@ -12,11 +12,13 @@
 # ENV selects the Terragrunt environment directory under envs/ (default: local-wsl).
 # Supported values: ec2 eks-fargate eks-ec2-s3 local-wsl
 #
-# Requires: terraform >= 1.9, terragrunt >= 0.68, and either aws CLI (cloud
-# scenarios) or nothing (local-wsl). Use `make install-tools` to get them
-# into ~/.local/bin and ~/venvs/tools (Python 3.11+).
+# Requires Linux x86_64, make, curl, git, Python 3.11+ with venv, and CA certificates.
+# install-tools installs Terraform/Terragrunt and Python tooling, NOT AWS CLI or k3s.
+# local-wsl deploy installs k3s/kubectl and requires systemd plus sudo.
 
 SHELL := /usr/bin/env bash
+.SHELLFLAGS := -eu -o pipefail -c
+export PATH := $(HOME)/.local/bin:$(HOME)/venvs/tools/bin:$(PATH)
 ENV   ?= local-wsl
 ENV_DIR := envs/$(ENV)
 SRC_DIRS := $(wildcard src/*)
@@ -31,15 +33,16 @@ help:
 	@grep -E '^[a-zA-Z_-]+:' $(MAKEFILE_LIST) | sed 's/:.*//' | sort -u | sed 's/^/  make /'
 
 install-tools:
+	@test "$$(uname -s)/$$(uname -m)" = Linux/x86_64 || { echo 'install-tools supports Linux x86_64'; exit 1; }
 	@echo "Installing Terraform, Terragrunt and Python tooling into ~/.local/bin and ~/venvs/tools"
 	mkdir -p $(HOME)/.local/bin
 	@command -v $(TERRAFORM) >/dev/null || { \
-	  TF_VER=$$(curl -fsSL https://api.github.com/repos/hashicorp/terraform/releases/latest | sed -n 's/.*"tag_name": "v\([^"]*\)".*/\1/p'); \
+	  TF_VER=1.9.8; \
 	  curl -fsSL -o /tmp/terraform.zip "https://releases.hashicorp.com/terraform/$${TF_VER}/terraform_$${TF_VER}_linux_amd64.zip"; \
 	  python3 -c "import zipfile; zipfile.ZipFile(r'/tmp/terraform.zip').extractall(r'$(HOME)/.local/bin')"; \
 	  chmod +x $(HOME)/.local/bin/terraform; }
 	@command -v $(TERRAGRUNT) >/dev/null || { \
-	  TG_VER=$$(curl -fsSL https://api.github.com/repos/gruntwork-io/terragrunt/releases/latest | sed -n 's/.*"tag_name": "v\([^"]*\)".*/\1/p'); \
+	  TG_VER=v0.68.2; \
 	  curl -fsSL -o $(HOME)/.local/bin/terragrunt "https://github.com/gruntwork-io/terragrunt/releases/download/$${TG_VER}/terragrunt_linux_amd64"; \
 	  chmod +x $(HOME)/.local/bin/terragrunt; }
 	@if [ ! -d "$(PYVENV)/.." ]; then \
@@ -81,6 +84,7 @@ validate-ansible:
 	@command -v $(PYVENV)/ansible-playbook >/dev/null || $(PYVENV)/pip install -q ansible-core
 	ANSIBLE_ROLES_PATH=ansible/roles $(PYVENV)/ansible-playbook --syntax-check -i localhost, ansible/playbooks/ec2.yml
 	ANSIBLE_ROLES_PATH=ansible/roles $(PYVENV)/ansible-playbook --syntax-check ansible/playbooks/eks-deploy.yml
+	ANSIBLE_ROLES_PATH=ansible/roles $(PYVENV)/ansible-playbook --syntax-check ansible/playbooks/eks-s3-deploy.yml
 	ANSIBLE_ROLES_PATH=ansible/roles $(PYVENV)/ansible-lint ansible/
 
 validate-k8s:
