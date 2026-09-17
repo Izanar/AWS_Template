@@ -25,8 +25,10 @@ EKS scenarios are reference code and are explicitly NOT scheduled for live runs.
   Owner confirmed Windows browser access via WSL IP; Windows localhost forwarding
   was unavailable and IP access was accepted (no network changes needed).
   Destroy removed app namespace/deployment/service and Terraform marker; empty
-  state and unavailable port 30080 verified. k3s, /opt/ai-nginx and the dedicated
-  kubeconfig remain by design; full host cleanup needs the owner's sudo password.
+  state and unavailable port 30080 verified. Owner subsequently uninstalled k3s
+  and removed /opt/ai-nginx and the dedicated kubeconfig. Independent verification:
+  k3s service not-found/inactive, no k3s/containerd processes, k3s binary and data
+  directories absent, checkout/kubeconfig absent, Terraform state still empty.
   Initial registration race was fixed with bounded polling before readiness.
   Final make test passed (13 tests plus static validation); standalone actionlint
   was unavailable in this session. No AWS operations were performed.
@@ -55,9 +57,8 @@ Existing user changes (role naming/docs and Fargate namespace selector) retained
 
 ## Remaining live acceptance / limitations
 
-1. Application E2E is complete for EC2 and local-wsl. Optional full local host
-   cleanup: owner uninstalls k3s on this dedicated test host and removes the
-   checkout and project kubeconfig. Do not confuse retained tooling with app resources.
+1. Application E2E is complete for EC2 and local-wsl. Full local test-cluster
+   cleanup is also verified; no local cleanup remains pending.
 2. EKS live runs are explicitly NOT planned (owner cost decision). The EKS and
    eks-ec2-s3 scenarios remain in the repo as reference code only. If they are
    ever revived, re-check region/version availability and extended-support

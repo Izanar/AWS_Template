@@ -85,7 +85,8 @@ Each root is cache-safe: no relative sibling paths, only registry modules from
 - [x] Automated offline regression tests: 13 unittest checks (template, S3
       delivery with a recorded fake AWS CLI, rendered manifests, k3s registration)
 - [x] Live application E2E for `local-wsl`: deploy, browser/HTTP checks, destroy;
-      state empty and app resources removed. k3s/checkout/kubeconfig retained.
+      state empty and app resources removed. Owner also uninstalled k3s and
+      removed checkout/kubeconfig; absence independently verified.
 
 ## Explicitly NOT planned (do not schedule for agents)
 
@@ -97,8 +98,7 @@ Each root is cache-safe: no relative sibling paths, only registry modules from
 
 ## Next Steps for Continuation
 
-1. Optional full local host cleanup by owner (sudo): uninstall dedicated k3s,
-   remove /opt/ai-nginx and the project kubeconfig. Application cleanup is verified.
+1. Local E2E and full test-cluster cleanup are complete; no local cleanup pending.
 2. Check the Billing entry for the completed EC2 test once data settles.
 3. Optional later: real GitHub OIDC + S3 state backend for the Deploy workflow;
    a first CI run without `[skip ci]` to turn the badge green.
