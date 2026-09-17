@@ -11,6 +11,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class TemplateTests(unittest.TestCase):
+    def test_ec2_has_no_unused_password_secret(self):
+        for name in ('main.tf', 'outputs.tf'):
+            content = (ROOT / 'src/ec2' / name).read_text()
+            self.assertNotIn('aws_secretsmanager_secret', content)
+            self.assertNotIn('app_password', content)
+
     def test_manifest_paths_exist(self):
         path = ROOT / 'ansible/playbooks/eks-deploy.yml'
         play = yaml.safe_load(path.read_text())[0]
